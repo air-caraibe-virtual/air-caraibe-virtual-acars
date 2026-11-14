@@ -55,7 +55,7 @@ function init(onStatus) {
   notify = onStatus || notify;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.allowPrerelease = true;
+  autoUpdater.allowPrerelease = false;
 
   autoUpdater.on('checking-for-update', () => setStatus('checking', 'Recherche d\'une nouvelle version…'));
   autoUpdater.on('update-not-available', () => setStatus('uptodate', 'Le logiciel est à jour (v' + app.getVersion() + ')'));
