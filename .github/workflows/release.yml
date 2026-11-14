@@ -1,10 +1,13 @@
-# Fabrique l'installateur Windows et publie la mise à jour à chaque nouvelle version (tag vX.Y.Z)
+# Fabrique l'installateur Windows et publie la mise à jour quand le numéro de version change
 name: Publier une version
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    paths:
+      - 'package.json'
+  workflow_dispatch:
 
 permissions:
   contents: write
