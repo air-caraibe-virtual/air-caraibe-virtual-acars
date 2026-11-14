@@ -130,6 +130,7 @@
     if (name === 'pireps') renderPireps();
     if (name === 'classement') renderBoard();
     if (name === 'vols') renderDaily();
+    if (name === 'actus' && !actus.length) loadActus();
   }
 
   // ---------- Carte (plan / satellite) ----------
@@ -1132,6 +1133,7 @@
     vols: { title: 'Choisir un vol', html: '<p>Trois façons de trouver un vol :</p><ul><li><b>Vols du jour</b> : 5 vols communs à toute la compagnie.</li><li><b>Vol aléatoire</b> : clique sur « Proposer un autre vol » jusqu\'à ce qu\'il te plaise.</li><li><b>Avion</b> : choisis ton appareil pour voir toutes ses lignes.</li></ul><p>Clique sur « Réserver », puis va dans « Mes vols ».</p>', go: ['mesvols', 'Voir mes vols'] },
     mesvols: { title: 'Mes vols réservés', html: '<ol><li>« SimBrief » prépare ton plan de vol déjà rempli.</li><li>« Démarrer » lance le suivi : l\'ACARS attend ton décollage.</li><li>Pose-toi à destination : ton PIREP s\'enregistre tout seul.</li></ol>', go: ['vols', 'Réserver un vol'] },
     pireps: { title: 'Mes PIREPs', html: '<p>Chaque vol terminé devient un PIREP : temps de vol, altitude maximale et taux d\'atterrissage.</p><p>« Accepté » veut dire que tu t\'es posé à moins de 15 NM de l\'aéroport prévu.</p>', go: ['classement', 'Voir le classement'] },
+    actus: { title: 'Actualités Air Caraïbes', html: '<p>Les derniers articles de presse sur la vraie compagnie Air Caraïbes : nouvelles lignes, avions, événements.</p><p>Clique sur un titre pour lire l\'article sur le site du média.</p>', go: null },
     classement: { title: 'Le classement', html: '<p>Les atterrissages les plus doux de toute la compagnie. Plus le chiffre en ft/min est petit, plus le poser est doux.</p><p>Astuce : vise entre -60 et -200 ft/min pour un poser propre.</p>', go: null },
     profil: { title: 'Ton profil', html: '<p>Mets ton prénom et ton indicatif : c\'est le nom qui apparaît dans le classement.</p>', go: ['parametres', 'Ouvrir les paramètres'] },
     parametres: { title: 'Les paramètres', html: '<p>Ajoute ton identifiant SimBrief (nom d\'utilisateur ou Pilot ID) pour importer tes plans de vol en un clic.</p><p>« Tester avec mon dernier plan » vérifie que tout marche.</p><p>Tu y trouves aussi les nouveautés, les mises à jour et le mode <b>bêta-testeur</b> pour recevoir les nouveautés en avant-première.</p>', go: null }
@@ -1142,7 +1144,7 @@
     ['L\'import SimBrief ne marche pas', 'Mets ton identifiant SimBrief dans « Profil », génère ton plan sur SimBrief, puis clique sur « Importer mon plan SimBrief ».'],
     ['C\'est quoi le TOD ?', 'Top Of Descent : le point où tu commences ta descente. En général 3 NM par tranche de 1 000 ft à perdre.'],
     ['Comment rejoindre les autres pilotes ?', 'Sur notre serveur Discord : bouton dans l\'onglet « Profil ».'],
-    ['D\'où viennent les actualités Air Caraïbes ?', 'Ce sont les derniers articles de presse sur la vraie compagnie, trouvés par Google Actualités. Clique sur un titre pour lire l\'article.'],
+    ['D\'où viennent les actualités Air Caraïbes ?', 'Onglet « Actualités Air Caraïbes », à côté de « Carte live » : les derniers articles sur la vraie compagnie, trouvés par Google Actualités.'],
     ['C\'est quoi les avions bleus sur la carte ?', 'Ce sont les vrais vols Air Caraïbes en ce moment (positions ADS-B). Tu peux les cacher avec la case « Vrais vols Air Caraïbes » sous la carte.'],
     ['J\'ai une idée pour améliorer l\'ACARS', 'Clique sur le bouton jaune « Une idée ? » en haut : ton idée arrive directement à la compagnie.'],
     ['C\'est quoi le mode bêta-testeur ?', 'Dans « Paramètres », active « Recevoir les versions bêta » pour tester les nouveautés avant leur sortie officielle.']
@@ -1280,7 +1282,7 @@
   setInterval(() => { if ($('lock').classList.contains('hidden')) authCheck(); }, 10 * 60 * 1000);
 
   // ---------- Actualités de la vraie compagnie Air Caraïbes ----------
-  let actus = [], actuAll = false;
+  let actus = [];
   function actuDate(t) {
     if (!t) return '';
     const d = new Date(t), now = new Date(), day = 86400000;
@@ -1290,20 +1292,18 @@
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
   }
   function drawActus() {
-    const list = actuAll ? actus : actus.slice(0, 4);
+    const list = actus;
     $('actuList').innerHTML = list.length ? list.map((a, i) =>
       '<li><button class="actu-item" data-i="' + i + '"><span class="actu-title">' + (Date.now() - a.date < 86400000 ? '<span class="actu-new">NOUVEAU</span>' : '') + esc(a.title) + '</span>' +
       '<span class="actu-meta">' + esc(a.source || '') + (a.source ? ' · ' : '') + actuDate(a.date) + '</span></button></li>').join('')
       : '<li class="muted small">Pas d\'actualité récente pour le moment.</li>';
-    $('btnActuMore').classList.toggle('hidden', actus.length <= 4);
-    $('btnActuMore').textContent = actuAll ? 'Voir moins' : 'Voir plus d\'actualités (' + actus.length + ')';
   }
   $('actuList').addEventListener('click', (e) => {
     const b = e.target.closest('.actu-item'); if (!b) return;
-    const a = (actuAll ? actus : actus.slice(0, 4))[Number(b.dataset.i)];
+    const a = actus[Number(b.dataset.i)];
     if (a && /^https:\/\//.test(a.link)) openUrl(a.link);
   });
-  $('btnActuMore').addEventListener('click', () => { actuAll = !actuAll; drawActus(); });
+  $('btnActuRefresh').addEventListener('click', () => { loadActus(); toast('Actualités mises à jour'); });
   function loadActus() {
     if (!window.acv || !window.acv.newsList) { $('actuList').innerHTML = '<li class="muted small">Actualités disponibles dans le logiciel installé.</li>'; return; }
     window.acv.newsList().then((r) => {

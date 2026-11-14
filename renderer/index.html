@@ -21,6 +21,7 @@
   </div>
   <nav class="nav" aria-label="Navigation principale">
     <button class="nav-btn active" data-view="carte">Carte live</button>
+    <button class="nav-btn" data-view="actus">Actualités Air Caraïbes</button>
     <button class="nav-btn" data-view="vols">Réservation de vol</button>
     <button class="nav-btn" data-view="mesvols">Mes vols</button>
     <button class="nav-btn" data-view="pireps">PIREPs</button>
@@ -95,16 +96,22 @@
           <div id="wxList" class="muted small">Chargement de la météo…</div>
           <div id="wxNote" class="muted small" style="margin-top:6px"></div>
         </div>
-        <div class="card news-card">
-          <div class="card-head" style="margin-bottom:6px">
-            <h2 style="margin:0">Actualités Air Caraïbes</h2>
-            <span class="muted small">la vraie compagnie</span>
-          </div>
-          <ul id="actuList" class="actu-list"><li class="muted small">Chargement des actualités…</li></ul>
-          <button id="btnActuMore" class="link-btn hidden">Voir plus d'actualités</button>
-          <p class="muted small actu-src">Titres trouvés par Google Actualités. Un clic ouvre l'article sur le site du média.</p>
-        </div>
       </aside>
+    </div>
+  </section>
+
+  <!-- ACTUALITÉS DE LA VRAIE COMPAGNIE -->
+  <section id="view-actus" class="view">
+    <div class="card actus-page">
+      <div class="card-head">
+        <div>
+          <h1>Actualités Air Caraïbes</h1>
+          <p class="muted small" style="margin:4px 0 0">Les derniers articles de presse sur la vraie compagnie Air Caraïbes, mis à jour toutes les 30 minutes.</p>
+        </div>
+        <button id="btnActuRefresh" class="btn outline small">Actualiser</button>
+      </div>
+      <ul id="actuList" class="actu-list actu-grid"><li class="muted small">Chargement des actualités…</li></ul>
+      <p class="muted small actu-src">Titres trouvés par Google Actualités. Un clic ouvre l'article sur le site du média.</p>
     </div>
   </section>
 

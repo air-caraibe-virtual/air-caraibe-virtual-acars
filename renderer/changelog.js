@@ -5,7 +5,7 @@ window.ACV_CHANGELOG = [
     version: '0.1.8',
     date: '15 novembre 2026',
     added: ["Carte live : les vrais vols Air Caraïbes en A350, A330 et ATR (indicatif FWI) apparaissent en bleu, avec leur avion, leur immatriculation, leur altitude et leur vitesse. Case « Vrais vols Air Caraïbes » sous la carte pour les afficher ou les cacher.",
-      "Carte live : les actualités du jour de la vraie compagnie Air Caraïbes. Clique sur un titre pour lire l'article."],
+      "Nouvel onglet « Actualités Air Caraïbes », à côté de « Carte live » : les actualités du jour de la vraie compagnie. Clique sur un titre pour lire l'article."],
     fixed: ["L'onglet « Vols aléatoires » s'appelle maintenant « Réservation de vol »."]
   },
   {

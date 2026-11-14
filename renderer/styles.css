@@ -343,3 +343,11 @@ input[readonly] { background: #f4eef0; color: var(--muted); }
 .actu-new { display: inline-block; background: #ffd23f; color: var(--ink); font-size: 10px; font-weight: 800; padding: 0 6px; border-radius: 99px; margin-right: 4px; vertical-align: 1px; }
 .link-btn { border: none; background: none; color: var(--flower-dark); font-weight: 700; padding: 6px 0; cursor: pointer; text-decoration: underline; }
 .actu-src { margin: 6px 0 0; font-size: 11px; }
+.actus-page { max-width: 980px; margin: 0 auto; }
+.actu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 12px; margin-top: 14px; }
+.actu-grid li { border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.actu-grid li:first-child { border-top: 1px solid var(--line); }
+.actu-grid li.muted { border: none; background: none; }
+.actu-grid .actu-item { padding: 14px 16px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; border-radius: 14px; }
+.actu-grid .actu-item:hover { background: var(--soft, #fbeff2); }
+.actu-grid .actu-title { font-size: 15px; }
