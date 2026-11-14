@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com; connect-src 'self'; font-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com https://tilecache.rainviewer.com https://gibs.earthdata.nasa.gov; connect-src 'self'; font-src 'self'">
 <title>Air Caraïbe Virtual — ACARS bêta</title>
 <link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css">
 <link rel="stylesheet" href="styles.css">
@@ -52,7 +52,12 @@
           <div id="profileChart"></div>
         </div>
         <div class="map-foot">
-          <label class="check"><input type="checkbox" id="followPlane" checked> Suivre mon avion</label>
+          <div class="map-options">
+            <label class="check"><input type="checkbox" id="followPlane" checked> Suivre mon avion</label>
+            <label class="check"><input type="checkbox" id="wxRadar"> Radar pluie</label>
+            <label class="check"><input type="checkbox" id="wxClouds"> Nuages (satellite)</label>
+            <span id="wxLayerTime" class="muted small"></span>
+          </div>
           <button id="btnClearTrail" class="link-btn">Effacer la trace</button>
         </div>
       </div>

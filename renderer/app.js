@@ -173,6 +173,40 @@
   $('btnSat').addEventListener('click', () => setMapMode(true));
   $('btnClearTrail').addEventListener('click', () => { if (trail) trail.setLatLngs([]); });
 
+  // ---------- Météo sur la carte : radar de pluie et nuages par satellite ----------
+  let radarLayer = null, cloudLayer = null, radarTime = 0;
+  function wxLayerLabel() {
+    const parts = [];
+    if ($('wxRadar').checked && radarTime) { const d = new Date(radarTime * 1000); parts.push('<span class="radar-legend">Radar ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ' <i title="faible à très forte"></i></span>'); }
+    if ($('wxClouds').checked) parts.push('Nuages : image satellite GOES (toutes les 10 min)');
+    $('wxLayerTime').innerHTML = parts.join(' · ');
+  }
+  function loadRadar() {
+    if (!map || !$('wxRadar').checked || !window.acv || !window.acv.radar) return;
+    window.acv.radar().then((r) => {
+      if (!r || !r.ok) { toast('Radar météo indisponible pour le moment'); return; }
+      radarTime = r.time;
+      if (radarLayer) map.removeLayer(radarLayer);
+      radarLayer = L.tileLayer(r.url, { opacity: 0.7, maxNativeZoom: 7, maxZoom: 18, zIndex: 400, attribution: 'Radar &copy; RainViewer' }).addTo(map);
+      wxLayerLabel();
+    }).catch(() => toast('Radar météo indisponible pour le moment'));
+  }
+  function setClouds(on) {
+    if (!map) return;
+    if (on && !cloudLayer) {
+      cloudLayer = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_Band13_Clean_Infrared/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png', {
+        opacity: 0.45, maxNativeZoom: 6, maxZoom: 18, zIndex: 350, attribution: 'Nuages &copy; NASA GIBS, NOAA GOES'
+      }).addTo(map);
+    } else if (!on && cloudLayer) { map.removeLayer(cloudLayer); cloudLayer = null; }
+  }
+  $('wxRadar').addEventListener('change', (e) => {
+    store.set('wxRadar', e.target.checked);
+    if (e.target.checked) loadRadar(); else if (radarLayer) { map.removeLayer(radarLayer); radarLayer = null; }
+    wxLayerLabel();
+  });
+  $('wxClouds').addEventListener('change', (e) => { store.set('wxClouds', e.target.checked); setClouds(e.target.checked); wxLayerLabel(); });
+  setInterval(() => { loadRadar(); if (cloudLayer) cloudLayer.redraw(); }, 10 * 60 * 1000);
+
   const PLANE_SVG = '<svg width="34" height="34" viewBox="-17 -17 34 34" style="display:block;transform-origin:center"><path d="M0 -16 C 2 -16 3 -12 3 -8 L3 -3 L16 4 L16 7 L3 4 L2 11 L6 14 L6 16 L0 15 L-6 16 L-6 14 L-2 11 L-3 4 L-16 7 L-16 4 L-3 -3 L-3 -8 C -3 -12 -2 -16 0 -16 Z" fill="#d6204f" stroke="#ffffff" stroke-width="1.6"/></svg>';
   function updatePlane(d) {
     if (!map) return;
@@ -1078,6 +1112,9 @@
   // ---------- Démarrage ----------
   initMap();
   if (store.get('mapSat', false)) setMapMode(true);
+  if (store.get('wxRadar', false)) { $('wxRadar').checked = true; loadRadar(); }
+  if (store.get('wxClouds', false)) { $('wxClouds').checked = true; setClouds(true); }
+  wxLayerLabel();
   renderCats();
   renderRandom();
   renderDaily();

@@ -67,6 +67,19 @@ ipcMain.handle('board:submit', (_e, entry) => board.submit(entry));
 ipcMain.handle('board:list', () => board.list());
 ipcMain.handle('live:post', (_e, pos) => board.livePost(pos));
 ipcMain.handle('live:list', () => board.liveList());
+// Radar de pluie (RainViewer, gratuit et sans clé) : dernière image disponible
+ipcMain.handle('wx:radar', async () => {
+  try {
+    const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+    const d = await res.json();
+    const past = (d.radar && d.radar.past) || [];
+    const last = past[past.length - 1];
+    if (!last || !/^https:\/\/[a-z0-9.-]+$/.test(d.host) || !/^\/v2\/radar\/[A-Za-z0-9]+$/.test(last.path)) return { ok: false };
+    return { ok: true, url: d.host + last.path + '/256/{z}/{x}/{y}/2/1_1.png', time: last.time };
+  } catch (e) {
+    return { ok: false };
+  }
+});
 // Météo réelle des aéroports (METAR, aviationweather.gov, gratuit et sans clé)
 ipcMain.handle('wx:metar', async (_e, ids) => {
   const list = [].concat(ids || []).map((x) => String(x).toUpperCase()).filter((x) => /^[A-Z]{4}$/.test(x)).slice(0, 20);

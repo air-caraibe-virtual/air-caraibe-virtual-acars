@@ -2,6 +2,15 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.3',
+    date: '14/11/2026',
+    added: [
+      'Météo sur la carte live : radar de pluie en direct et nuages vus par satellite, à cocher sous la carte.'
+    ],
+    fixed: [],
+    removed: []
+  },
+  {
     version: '0.1.2',
     date: '14/11/2026',
     added: [

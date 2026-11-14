@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('acv', {
   livePost: (pos) => ipcRenderer.invoke('live:post', pos),
   liveList: () => ipcRenderer.invoke('live:list'),
   metar: (ids) => ipcRenderer.invoke('wx:metar', ids),
+  radar: () => ipcRenderer.invoke('wx:radar'),
   updateGetConfig: () => ipcRenderer.invoke('update:getConfig'),
   updateSetOwner: (owner) => ipcRenderer.invoke('update:setOwner', owner),
   updateCheck: () => ipcRenderer.invoke('update:check'),

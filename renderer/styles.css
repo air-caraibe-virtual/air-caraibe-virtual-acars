@@ -281,3 +281,7 @@ details.faq p { margin: 6px 0 0; color: var(--muted); }
 .setting .field { max-width: 420px; }
 .status-ok { color: var(--green); font-weight: 700; }
 .status-err { color: #a11b1b; font-weight: 700; }
+
+.map-options { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
+.radar-legend { display: inline-flex; align-items: center; gap: 6px; }
+.radar-legend i { display: inline-block; width: 70px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #88ddee, #3a9cff, #00c800, #ffee00, #ff8800, #ff0000, #c800c8); }
