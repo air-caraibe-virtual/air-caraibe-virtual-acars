@@ -2,18 +2,6 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
-    version: '0.1.2',
-    date: '14/11/2026',
-    added: [
-      'Météo réelle des aéroports (METAR) dans la carte live : vent, visibilité, température, QNH, nuages et catégorie VFR/IFR, pour ton vol ou toutes les escales.',
-      'La météo s\'affiche aussi au survol des aéroports sur la carte.'
-    ],
-    fixed: [],
-    removed: [
-      'La voix de l\'accueil : Ti-Pilote t\'accueille maintenant en musique zouk, sans voix.'
-    ]
-  },
-  {
     version: '0.1.1',
     date: '14/11/2026',
     added: [
@@ -24,12 +12,16 @@ window.ACV_CHANGELOG = [
       'Fenêtre « Quoi de neuf ? » : à chaque mise à jour, Ti-Pilote te montre ce qui a changé.',
       'Historique de toutes les nouveautés dans l\'onglet Profil.',
       'Carte live : les avions de tous les pilotes en vol apparaissent sur la carte (en turquoise), avec leur nom, leur vol, leur altitude et leur vitesse.',
-      'Compteur des pilotes en vol au-dessus de la carte.'
+      'Compteur des pilotes en vol au-dessus de la carte.',
+      'Météo réelle des aéroports (METAR) dans la carte live : vent, visibilité, température, QNH, nuages et catégorie VFR/IFR, pour ton vol ou toutes les escales.',
+      'La météo s\'affiche aussi au survol des aéroports sur la carte.'
     ],
     fixed: [
       'Carte « Plan » : le message « API KEY REQUIRED » a disparu, nouveau fond de carte gratuit.'
     ],
-    removed: []
+    removed: [
+      'La voix de l\'accueil : Ti-Pilote t\'accueille maintenant en musique zouk, sans voix.'
+    ]
   },
   {
     version: '0.1.0',
