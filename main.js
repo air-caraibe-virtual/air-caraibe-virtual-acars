@@ -67,6 +67,18 @@ ipcMain.handle('board:submit', (_e, entry) => board.submit(entry));
 ipcMain.handle('board:list', () => board.list());
 ipcMain.handle('live:post', (_e, pos) => board.livePost(pos));
 ipcMain.handle('live:list', () => board.liveList());
+// Météo réelle des aéroports (METAR, aviationweather.gov, gratuit et sans clé)
+ipcMain.handle('wx:metar', async (_e, ids) => {
+  const list = [].concat(ids || []).map((x) => String(x).toUpperCase()).filter((x) => /^[A-Z]{4}$/.test(x)).slice(0, 20);
+  if (!list.length) return { ok: false, message: 'Aucun aéroport' };
+  try {
+    const res = await fetch('https://aviationweather.gov/api/data/metar?format=json&ids=' + list.join(','));
+    const data = await res.json();
+    return { ok: true, metars: Array.isArray(data) ? data : [] };
+  } catch (e) {
+    return { ok: false, message: 'Météo injoignable (connexion ?)' };
+  }
+});
 ipcMain.handle('simbrief:fetch', async (_e, username) => {
   username = String(username || '').trim();
   if (!/^[A-Za-z0-9_.-]{2,40}$/.test(username)) return { ok: false, message: 'Identifiant SimBrief invalide' };

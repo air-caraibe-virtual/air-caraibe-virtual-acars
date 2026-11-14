@@ -64,6 +64,17 @@
           <h2>Vol en cours</h2>
           <div id="activeFlight" class="muted">Aucun vol démarré. Réserve un vol dans « Vols aléatoires », puis démarre-le dans « Mes vols ».</div>
         </div>
+              <div class="card">
+          <div class="card-head" style="margin-bottom:6px">
+            <h2 style="margin:0">Météo</h2>
+            <div class="toggle" role="group" aria-label="Aéroports affichés">
+              <button id="wxMine" class="tog active">Mon vol</button>
+              <button id="wxAll" class="tog">Escales</button>
+            </div>
+          </div>
+          <div id="wxList" class="muted small">Chargement de la météo…</div>
+          <div id="wxNote" class="muted small" style="margin-top:6px"></div>
+        </div>
       </aside>
     </div>
   </section>

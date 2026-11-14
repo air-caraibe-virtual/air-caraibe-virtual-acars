@@ -2,6 +2,16 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.2',
+    date: '14/11/2026',
+    added: [
+      'Météo réelle des aéroports (METAR) dans la carte live : vent, visibilité, température, QNH, nuages et catégorie VFR/IFR, pour ton vol ou toutes les escales.',
+      'La météo s\'affiche aussi au survol des aéroports sur la carte.'
+    ],
+    fixed: [],
+    removed: []
+  },
+  {
     version: '0.1.1',
     date: '14/11/2026',
     added: [

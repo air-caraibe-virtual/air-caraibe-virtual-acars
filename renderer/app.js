@@ -130,6 +130,13 @@
 
   // ---------- Carte (plan / satellite) ----------
   let planLayer, satLayer, planeMarker = null, trail = null, routeLine = null;
+  const aptMarkers = {};
+  function updateAirportTips() {
+    Object.entries(aptMarkers).forEach(([code, mk]) => {
+      const m = wxCache[code];
+      mk.setTooltipContent(code + ' · ' + AIRPORTS[code][0] + (m ? '<br><span style="font-weight:600">' + wxShort(m) + '</span>' : ''));
+    });
+  }
   function initMap() {
     if (typeof L === 'undefined') {
       $('map').innerHTML = '<div class="empty" style="padding:20px">La carte n\'a pas pu se charger.</div>';
@@ -148,7 +155,7 @@
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 })
     ]);
     Object.entries(AIRPORTS).forEach(([code, a]) => {
-      L.circleMarker([a[1], a[2]], { radius: 6, color: '#ffffff', weight: 2, fillColor: '#8f1238', fillOpacity: 1 })
+      aptMarkers[code] = L.circleMarker([a[1], a[2]], { radius: 6, color: '#ffffff', weight: 2, fillColor: '#8f1238', fillOpacity: 1 })
         .addTo(map)
         .bindTooltip(code + ' · ' + a[0], { direction: 'top', className: 'apt-label', offset: [0, -6] });
     });
@@ -337,6 +344,91 @@
   setInterval(liveTick, 20000);
   setTimeout(liveTick, 3000);
 
+  // ---------- Météo réelle (METAR) ----------
+  const COVER = { FEW: 'Peu', SCT: 'Épars', BKN: 'Fragmenté', OVC: 'Couvert', VV: 'Ciel invisible' };
+  const WX = { RA: 'pluie', SHRA: 'averses', SH: 'averses', TS: 'orage', TSRA: 'orage avec pluie', DZ: 'bruine', BR: 'brume', FG: 'brouillard', HZ: 'brume sèche', SQ: 'grains', DU: 'poussière', SA: 'sable' };
+  const CAT_TXT = { VFR: 'VFR', MVFR: 'MVFR', IFR: 'IFR', LIFR: 'LIFR' };
+  let wxMode = 'mine';
+  let wxCache = {};
+  function wxPhenomena(str) {
+    if (!str) return '';
+    return str.split(' ').map((w) => {
+      const m = /^([+-]?)(VC)?([A-Z]+)$/.exec(w); if (!m) return w;
+      const base = WX[m[3]] || WX[m[3].slice(-2)] || m[3];
+      return (m[2] ? base + ' à proximité' : base) + (m[1] === '-' ? ' faible' : m[1] === '+' ? ' forte' : '');
+    }).join(', ');
+  }
+  function wxVis(v) {
+    if (v == null || v === '') return '—';
+    if (String(v).indexOf('+') !== -1) return '10 km ou plus';
+    const km = Number(v) * 1.609;
+    return isFinite(km) ? (km >= 10 ? '10 km ou plus' : (km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1).replace('.', ',') + ' km')) : String(v);
+  }
+  function wxWind(m) {
+    if (!m.wspd) return 'Calme';
+    const dir = m.wdir === 'VRB' ? 'Variable' : String(m.wdir).padStart(3, '0') + '°';
+    return dir + ' · ' + m.wspd + ' kt' + (m.wgst ? ' (rafales ' + m.wgst + ' kt)' : '');
+  }
+  function wxClouds(m) {
+    if (m.cover === 'CAVOK') return 'CAVOK, ciel dégagé';
+    const cl = (m.clouds || []).filter((c) => COVER[c.cover]);
+    if (!cl.length) return 'Ciel dégagé';
+    return cl.map((c) => COVER[c.cover] + ' à ' + Number(c.base).toLocaleString('fr-FR') + ' ft').join(', ');
+  }
+  function wxAge(m) {
+    const min = Math.round((Date.now() / 1000 - m.obsTime) / 60);
+    return isFinite(min) ? (min < 60 ? 'il y a ' + Math.max(min, 0) + ' min' : 'il y a ' + Math.round(min / 60) + ' h') : '';
+  }
+  function wxShort(m) {
+    return (CAT_TXT[m.fltCat] || '') + ' · ' + wxWind(m) + ' · ' + (m.temp != null ? m.temp + ' °C' : '');
+  }
+  function wxIds() {
+    if (wxMode === 'all') return Object.keys(AIRPORTS);
+    const a = getActive();
+    return a ? [a.from, a.to] : ['TFFR', 'TFFF'];
+  }
+  function renderWx(note) {
+    const ids = wxIds();
+    const rows = ids.map((id) => wxCache[id]).filter(Boolean);
+    if (!rows.length) { $('wxList').className = 'muted small'; $('wxList').textContent = note || 'Pas de bulletin météo disponible.'; return; }
+    const a = getActive();
+    $('wxList').className = '';
+    $('wxList').innerHTML = ids.map((id) => {
+      const m = wxCache[id];
+      const role = wxMode === 'mine' && a ? (id === a.from ? 'Départ' : 'Arrivée') : '';
+      if (!m) return '<div class="wx"><div class="wx-top"><b>' + id + '</b><span class="muted small">pas de bulletin</span></div><div class="wx-name">' + esc(AIRPORTS[id] ? AIRPORTS[id][0] : '') + '</div></div>';
+      const ph = wxPhenomena(m.wxString);
+      return '<div class="wx"><div class="wx-top"><div><b>' + id + '</b>' + (role ? ' <span class="muted small">· ' + role + '</span>' : '') +
+        '<div class="wx-name">' + esc(AIRPORTS[id] ? AIRPORTS[id][0] : (m.name || '')) + ' · ' + wxAge(m) + '</div></div>' +
+        (m.fltCat ? '<span class="cat ' + esc(m.fltCat) + '">' + esc(m.fltCat) + '</span>' : '') + '</div>' +
+        '<div class="wx-grid"><div><span>Vent</span>' + wxWind(m) + '</div><div><span>Visibilité</span>' + wxVis(m.visib) + '</div>' +
+        '<div><span>Température</span>' + (m.temp != null ? m.temp + ' °C' : '—') + (m.dewp != null ? ' (rosée ' + m.dewp + ' °C)' : '') + '</div>' +
+        '<div><span>QNH</span>' + (m.altim ? Math.round(m.altim) + ' hPa' : '—') + '</div>' +
+        '<div style="grid-column:1/-1"><span>Nuages</span>' + wxClouds(m) + (ph ? ' · ' + esc(ph) : '') + '</div></div>' +
+        '<details class="wx-raw"><summary>METAR brut</summary><code>' + esc(m.rawOb || '') + '</code></details></div>';
+    }).join('');
+    $('wxNote').textContent = note || 'Météo réelle des aéroports (METAR), mise à jour toutes les 10 minutes.';
+  }
+  function loadWx() {
+    if (!window.acv || !window.acv.metar) { renderWx('Météo indisponible.'); return; }
+    window.acv.metar(Object.keys(AIRPORTS)).then((r) => {
+      if (r && r.ok) {
+        r.metars.forEach((m) => { wxCache[m.icaoId] = m; });
+        updateAirportTips();
+        renderWx();
+      } else renderWx(r && r.message);
+    }).catch(() => renderWx('Météo injoignable (connexion ?)'));
+  }
+  function setWxMode(mode) {
+    wxMode = mode;
+    $('wxMine').classList.toggle('active', mode === 'mine');
+    $('wxAll').classList.toggle('active', mode === 'all');
+    renderWx();
+  }
+  $('wxMine').addEventListener('click', () => setWxMode('mine'));
+  $('wxAll').addEventListener('click', () => setWxMode('all'));
+  setInterval(loadWx, 10 * 60 * 1000);
+
   // ---------- Liaison simulateur ----------
   function phaseOf(d) {
     if (d.onGround) {
@@ -376,7 +468,7 @@
   // ---------- Suivi de vol et PIREP automatique ----------
   let lastAirborneVs = 0;
   function getActive() { return store.get('active', null); }
-  function setActive(a) { store.set('active', a); renderActive(); drawRoute(a); }
+  function setActive(a) { store.set('active', a); renderActive(); drawRoute(a); if (typeof renderWx === 'function') renderWx(); }
 
   function track(d) {
     const a = getActive();
@@ -898,6 +990,7 @@
   renderCats();
   renderRandom();
   renderDaily();
+  loadWx();
   renderActive();
   drawRoute(getActive());
   loadProfile();
