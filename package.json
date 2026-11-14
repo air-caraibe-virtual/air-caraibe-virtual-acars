@@ -1,6 +1,6 @@
 {
   "name": "air-caraibe-virtual-acars",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Air Caraïbe Virtual — ACARS pilote (bêta) · météo METAR",
   "main": "main.js",
   "scripts": {
