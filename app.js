@@ -147,14 +147,14 @@
 
   function altText(ft) { return ft >= 18000 ? 'FL' + String(Math.round(ft / 100)).padStart(3, '0') : Math.round(ft).toLocaleString('fr-FR') + ' ft'; }
   function openSheet(p) {
-    selected = p.id;
+    selected = p.id; $('sheet').classList.remove('real');
     $('sheetBody').innerHTML = '<div class="who">' + esc(p.pilot) + (p.callsign ? ' · ' + esc(p.callsign) : '') + '</div>' +
       '<div class="muted" style="margin:2px 0 0">' + esc(p.num || 'Vol libre') + (p.route ? ' · ' + esc(p.route) : '') + (p.aircraft ? ' · ' + esc(p.aircraft) : '') + '</div>' +
       '<div class="grid2"><div><span>Altitude</span><b>' + altText(p.alt) + '</b></div><div><span>Vitesse sol</span><b>' + Math.round(p.gs) + ' kt</b></div>' +
       '<div><span>Cap</span><b>' + String(Math.round(p.hdg) % 360).padStart(3, '0') + '°</b></div><div><span>Phase</span><b>' + esc(p.phase || '—') + '</b></div></div>';
     $('sheet').classList.remove('hidden');
   }
-  function closeSheet() { selected = null; $('sheet').classList.add('hidden'); }
+  function closeSheet() { selected = null; $('sheet').classList.add('hidden'); $('sheet').classList.remove('real'); }
   $('sheetClose').addEventListener('click', closeSheet);
 
   function drawLive(list) {
@@ -176,6 +176,58 @@
   async function loadLive() {
     try { const d = await getJSON(SERVICE + '?action=live'); if (d && d.ok) drawLive(d.live || []); } catch (e) { /* hors ligne */ }
   }
+
+  // ---------- Vrais vols Air Caraïbes (positions réelles ADS-B, indicatif FWI) ----------
+  const REAL_PLANE = PLANE.replace('#0e8a9a', '#1d4ea8').replace(/width="34" height="34"/, 'width="28" height="28"');
+  const REAL_TYPES = { A359: 'Airbus A350-900', A35K: 'Airbus A350-1000' };
+  const realMarkers = {};
+  let realData = null;
+  function realPos(f) {
+    const mins = Math.min(20, Math.max(0, (Date.now() - f.t) / 60000));
+    if (f.ground || !f.gs || mins < 0.2) return [f.lat, f.lon];
+    const dNm = f.gs * mins / 60, r = Math.PI / 180, h = f.hdg * r;
+    return [f.lat + (dNm * Math.cos(h)) / 60, f.lon + (dNm * Math.sin(h)) / (60 * Math.max(0.2, Math.cos(f.lat * r)))];
+  }
+  function openRealSheet(f) {
+    selected = 'real-' + f.id;
+    const age = Math.round((Date.now() - f.t) / 60000);
+    $('sheetBody').innerHTML = '<div class="who">' + esc(f.cs) + ' · Air Caraïbes</div>' +
+      '<div class="muted" style="margin:2px 0 0">Vol réel · ' + esc(REAL_TYPES[f.type] || f.type || '') + (f.reg ? ' · ' + esc(f.reg) : '') + '</div>' +
+      '<div class="grid2"><div><span>Altitude</span><b>' + (f.ground ? 'Au sol' : altText(f.alt)) + '</b></div><div><span>Vitesse sol</span><b>' + f.gs + ' kt</b></div>' +
+      '<div><span>Cap</span><b>' + String(f.hdg % 360).padStart(3, '0') + '°</b></div><div><span>Position</span><b>' + (age <= 1 ? 'À l\'instant' : 'Il y a ' + age + ' min') + '</b></div></div>' +
+      '<p class="muted tiny" style="text-align:left;margin:10px 0 0">Données ADS-B : adsb.lol (ODbL). Entre deux mises à jour, la position est estimée.</p>';
+    $('sheet').classList.add('real'); $('sheet').classList.remove('hidden');
+  }
+  function drawReal() {
+    if (!map) return;
+    const on = $('btnReal').getAttribute('aria-pressed') === 'true', list = on && realData ? (realData.flights || []) : [];
+    const seen = {};
+    list.forEach((f) => {
+      seen[f.id] = true;
+      const pos = realPos(f);
+      if (!realMarkers[f.id]) {
+        realMarkers[f.id] = L.marker(pos, { icon: L.divIcon({ className: 'real-ic', html: REAL_PLANE + '<span class="lbl">' + esc(f.cs) + '</span>', iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 600 })
+          .addTo(map).on('click', (e) => { L.DomEvent.stopPropagation(e); openRealSheet(realMarkers[f.id].data); });
+      } else realMarkers[f.id].setLatLng(pos);
+      realMarkers[f.id].data = f;
+      const el = realMarkers[f.id].getElement(); if (el) { const s = el.querySelector('svg'); if (s) s.style.transform = 'rotate(' + f.hdg + 'deg)'; }
+    });
+    Object.keys(realMarkers).forEach((id) => { if (!seen[id]) { map.removeLayer(realMarkers[id]); delete realMarkers[id]; } });
+    $('realCount').textContent = on && realData ? String(list.length) : '';
+  }
+  async function loadReal() {
+    if ($('btnReal').getAttribute('aria-pressed') !== 'true') return;
+    try { const d = await getJSON(SERVICE + '?action=real'); if (d && d.ok) { realData = d; drawReal(); } } catch (e) { /* hors ligne */ }
+  }
+  function setReal(on) {
+    $('btnReal').setAttribute('aria-pressed', String(on)); store.set('real', on);
+    if (map) { const a = 'Vols réels &copy; adsb.lol'; if (on) map.attributionControl.addAttribution(a); else map.attributionControl.removeAttribution(a); }
+    if (on) loadReal();
+    drawReal();
+  }
+  $('btnReal').addEventListener('click', () => setReal($('btnReal').getAttribute('aria-pressed') !== 'true'));
+  setInterval(loadReal, 3 * 60 * 1000);
+  setInterval(drawReal, 20000);
 
   // ---------- Vols du jour ----------
   function renderDaily() {
@@ -243,9 +295,10 @@
 
   // ---------- Démarrage ----------
   initMap();
+  setReal(store.get('real', true));
   loadLive();
   setInterval(loadLive, 20000);
   const start = (location.hash || '').slice(1);
   show(SUBS[start] ? start : 'carte');
-  if (!store.get('seen', false)) { store.set('seen', true); setTimeout(() => toast('Bienvenue à bord ! Les avions turquoise sont les pilotes en vol.'), 800); }
+  if (!store.get('seen', false)) { store.set('seen', true); setTimeout(() => toast('Bienvenue à bord ! Les avions turquoise sont nos pilotes, les bleus les vrais vols Air Caraïbes.'), 800); }
 })();
