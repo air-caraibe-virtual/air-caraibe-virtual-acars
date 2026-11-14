@@ -101,6 +101,7 @@ ipcMain.handle('board:list', () => board.list());
 ipcMain.handle('live:post', (_e, pos) => guarded(() => board.livePost(pos)));
 ipcMain.handle('live:list', () => board.liveList());
 ipcMain.handle('real:list', () => board.realList());
+ipcMain.handle('news:list', () => board.newsList());
 ipcMain.handle('idea:send', (_e, idea) => guarded(() => board.idea({ type: String((idea && idea.type) || ''), text: String((idea && idea.text) || '').slice(0, 1000), version: app.getVersion() })));
 // Radar de pluie (RainViewer, gratuit et sans clé) : dernière image disponible
 ipcMain.handle('wx:radar', async () => {

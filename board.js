@@ -37,6 +37,9 @@ module.exports = {
   realList: async () => {
     try { return await call('GET', null, 'real'); } catch (e) { return { ok: false }; }
   },
+  newsList: async () => {
+    try { return await call('GET', null, 'news'); } catch (e) { return { ok: false }; }
+  },
   liveList: async () => {
     try { return await call('GET', null, 'live'); } catch (e) { return { ok: false }; }
   }
