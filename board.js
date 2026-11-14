@@ -1,5 +1,5 @@
 // Classement des atterrissages partagé entre pilotes (tableur Google caché derrière l'ACARS)
-const BOARD_URL = '';
+const BOARD_URL = 'https://script.google.com/macros/s/AKfycbySqOUDuB985wIO40iVe9pp_RkRE-qa4JETa6u-YqPRLde0sfUMa58jSLSXaP2q08y7XA/exec';
 const BOARD_KEY = 'acv-445b2c6c42266694815ee83f';
 
 async function call(method, body) {
