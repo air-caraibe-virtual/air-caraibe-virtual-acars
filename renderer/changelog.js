@@ -2,6 +2,15 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.2',
+    date: '14/11/2026',
+    added: [
+      'Profil vertical en vol, sous la carte live : ton altitude selon la distance parcourue, colorée par phase (montée, croisière, descente, approche), avec le TOD et ta position actuelle.'
+    ],
+    fixed: [],
+    removed: []
+  },
+  {
     version: '0.1.1',
     date: '14/11/2026',
     added: [

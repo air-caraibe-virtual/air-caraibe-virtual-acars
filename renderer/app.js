@@ -259,6 +259,76 @@
     for (let i = 1; i < path.length; i++) t += distanceNm(path[i - 1][0], path[i - 1][1], path[i][0], path[i][1]);
     return t;
   }
+  // ---------- Profil vertical (altitude selon la distance parcourue) ----------
+  let profTimer = 0;
+  function recordProfile(a, d) {
+    if (!a || a.state !== 'airborne') return;
+    a.prof = a.prof || [];
+    const last = a.prof[a.prof.length - 1];
+    const step = last ? distanceNm(last.lat, last.lon, d.lat, d.lon) : 0;
+    const dist = last ? last.d + step : 0;
+    if (!last || step >= 0.8 || Math.abs(d.alt - last.alt) >= 250 || d.t - last.t > 20000) {
+      a.prof.push({ d: Math.round(dist * 10) / 10, alt: Math.round(d.alt), vs: Math.round(d.vs), lat: d.lat, lon: d.lon, t: d.t });
+      if (a.prof.length > 1500) a.prof = a.prof.filter((_, i) => i % 2 === 0);
+      store.set('active', a);
+    }
+  }
+  function niceStep(maxFt) {
+    const steps = [1000, 2000, 5000, 10000, 20000];
+    return steps.find((st) => Math.ceil(maxFt / st) <= 5) || 20000;
+  }
+  function phaseColor(p, nextAlt) {
+    if (p.vs > 300) return '#1f9d63';
+    if (p.vs < -300) return p.alt < 4000 ? '#d6204f' : '#e8890c';
+    return '#3b6fd8';
+  }
+  function renderProfile(a, d) {
+    const card = $('profileCard');
+    const pts = (a && a.prof) || [];
+    if (!a || pts.length < 2) { card.classList.add('hidden'); return; }
+    card.classList.remove('hidden');
+    const W = 760, H = 170, L = 52, R = 18, T = 14, B = 26;
+    const total = Math.max(routeLength(routePath(a)), pts[pts.length - 1].d, 1);
+    const maxNm = Math.ceil(total / 50) * 50 || 50;
+    const top = Math.max(cruiseFeet(a), ...pts.map((p) => p.alt)) * 1.08;
+    const stepFt = niceStep(top);
+    const maxFt = Math.ceil(top / stepFt) * stepFt;
+    const x = (nm) => L + (nm / maxNm) * (W - L - R);
+    const y = (ft) => T + (1 - Math.max(0, ft) / maxFt) * (H - T - B);
+    let g = '';
+    for (let ft = 0; ft <= maxFt; ft += stepFt) {
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(ft) + '" y2="' + y(ft) + '" stroke="#f1e6e9"/>' +
+        '<text class="ax" x="' + (L - 8) + '" y="' + (y(ft) + 4) + '" text-anchor="end">' + (ft === 0 ? '0' : stepFt >= 5000 ? 'FL' + String(ft / 100).padStart(3, '0') : (ft / 1000) + 'k ft') + '</text>';
+    }
+    const nmStep = [10, 20, 50, 100, 200, 500, 1000].find((st) => maxNm / st <= 8) || 1000;
+    for (let nm = 0; nm <= maxNm; nm += nmStep) {
+      if (x(nm) > W - R - 34) continue;  // laisse la place au libellé NM
+      g += '<text class="ax" x="' + x(nm) + '" y="' + (H - 8) + '" text-anchor="middle">' + nm + '</text>';
+    }
+    g += '<text class="ax" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end" font-weight="700">NM</text>';
+    // TOD prévu
+    const todNm = Math.max(0, total - todDistance(a));
+    g += '<line x1="' + x(todNm) + '" x2="' + x(todNm) + '" y1="' + T + '" y2="' + (H - B) + '" stroke="#2b1a22" stroke-dasharray="4 4" opacity="0.5"/>' +
+      '<text class="ax" x="' + (x(todNm) + 4) + '" y="' + (T + 10) + '" font-weight="700">TOD</text>';
+    // zone remplie sous la trace
+    const area = 'M' + x(pts[0].d) + ',' + y(0) + ' ' + pts.map((p) => 'L' + x(p.d).toFixed(1) + ',' + y(p.alt).toFixed(1)).join(' ') + ' L' + x(pts[pts.length - 1].d) + ',' + y(0) + ' Z';
+    g += '<path d="' + area + '" fill="#d6204f" opacity="0.07"/>';
+    // trace colorée par phase
+    for (let i = 1; i < pts.length; i++) {
+      const p0 = pts[i - 1], p1 = pts[i];
+      g += '<line x1="' + x(p0.d).toFixed(1) + '" y1="' + y(p0.alt).toFixed(1) + '" x2="' + x(p1.d).toFixed(1) + '" y2="' + y(p1.alt).toFixed(1) + '" stroke="' + phaseColor(p1) + '" stroke-width="3" stroke-linecap="round"/>';
+    }
+    const last = pts[pts.length - 1];
+    const cur = d && d.alt != null ? d.alt : last.alt;
+    const lx = x(last.d), ly = y(cur);
+    const label = (cur >= 18000 ? 'FL' + String(Math.round(cur / 100)).padStart(3, '0') : Math.round(cur).toLocaleString('fr-FR') + ' ft');
+    const anchor = lx > W - 110 ? 'end' : 'start';
+    g += '<circle cx="' + lx + '" cy="' + ly + '" r="6" fill="#ffd23f" stroke="#2b1a22" stroke-width="2"/>' +
+      '<rect x="' + (anchor === 'end' ? lx - 84 : lx + 10) + '" y="' + (ly - 26) + '" width="74" height="20" rx="6" fill="#2b1a22"/>' +
+      '<text x="' + (anchor === 'end' ? lx - 47 : lx + 47) + '" y="' + (ly - 12) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff" font-family="Segoe UI, system-ui, sans-serif">' + label + '</text>';
+    $('profileChart').innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Profil vertical du vol : ' + label + ' à ' + Math.round(last.d) + ' NM du départ">' + g + '</svg>';
+  }
+
   function updateProgress(d) {
     const a = getActive();
     const box = $('progressBox');
@@ -285,6 +355,8 @@
       '<div><span>Arrivée estimée</span><b>' + (d.gs > 40 ? pad2(eta.getHours()) + ':' + pad2(eta.getMinutes()) : '—') + '</b></div>' +
       '</div>';
     drawTod(a);
+    recordProfile(a, d);
+    if (Date.now() - profTimer > 2000) { profTimer = Date.now(); renderProfile(getActive(), d); }
   }
 
   // ---------- Avions des autres pilotes en vol ----------
@@ -468,7 +540,7 @@
   // ---------- Suivi de vol et PIREP automatique ----------
   let lastAirborneVs = 0;
   function getActive() { return store.get('active', null); }
-  function setActive(a) { store.set('active', a); renderActive(); drawRoute(a); if (typeof renderWx === 'function') renderWx(); }
+  function setActive(a) { store.set('active', a); renderActive(); drawRoute(a); if (typeof renderWx === 'function') renderWx(); if (typeof renderProfile === 'function') renderProfile(a); }
 
   function track(d) {
     const a = getActive();
@@ -988,6 +1060,7 @@
   renderCats();
   renderRandom();
   renderDaily();
+  renderProfile(getActive());
   loadWx();
   renderActive();
   drawRoute(getActive());
