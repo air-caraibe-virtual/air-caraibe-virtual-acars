@@ -1097,7 +1097,14 @@
     $('newsClose').focus();
   }
   $('newsClose').addEventListener('click', () => $('news').classList.add('hidden'));
-  $('btnNews').addEventListener('click', () => showNews(window.ACV_CHANGELOG || [], 'Toutes les nouveautés de l\'ACARS'));
+  $('btnNews').addEventListener('click', () => {
+    const log = window.ACV_CHANGELOG || [];
+    if (log.length) { showNews(log, 'Toutes les nouveautés de l\'ACARS'); return; }
+    $('newsSub').textContent = 'Historique des nouveautés';
+    $('newsBody').innerHTML = '<p class="muted">Pas encore de nouveautés à afficher. Elles apparaîtront ici à la prochaine mise à jour.</p>';
+    $('news').classList.remove('hidden');
+    $('newsClose').focus();
+  });
   function checkNews(version) {
     const log = window.ACV_CHANGELOG || [];
     const seen = store.get('lastSeenVersion', null);
