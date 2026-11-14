@@ -17,11 +17,10 @@ button { font: inherit; cursor: pointer; }
 input { font: inherit; }
 input:focus-visible, button:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
 
-/* Fond photo qui change toutes les 5 minutes */
+/* Fond photo : le terminal de l'aéroport */
 .bg { position: fixed; inset: 0; background-size: cover; background-position: center 40%; opacity: 0; transition: opacity 2.5s ease; z-index: 0; }
 .bg.visible { opacity: 1; }
 .bg-photo1 { background-image: url(assets/photo1.jpg); }
-.bg-photo2 { background-image: url(assets/photo2.jpg); }
 .veil { position: fixed; inset: 0; z-index: 0; background: linear-gradient(rgba(255,255,255,0.88) 0, rgba(255,255,255,0.35) 90px, rgba(255,255,255,0) 200px); }
 
 .topbar { position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 28px; }

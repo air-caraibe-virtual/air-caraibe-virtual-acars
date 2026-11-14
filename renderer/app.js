@@ -111,14 +111,6 @@
     if (name === 'pireps') renderPireps();
   }
 
-  // ---------- Fond photo : change toutes les 5 minutes ----------
-  let photo = 0;
-  setInterval(() => {
-    photo = (photo + 1) % 2;
-    $('bg1').classList.toggle('visible', photo === 0);
-    $('bg2').classList.toggle('visible', photo === 1);
-  }, 5 * 60 * 1000);
-
   // ---------- Carte (plan / satellite) ----------
   let planLayer, satLayer, planeMarker = null, trail = null, routeLine = null;
   function initMap() {
