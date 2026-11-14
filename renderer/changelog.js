@@ -2,6 +2,11 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.8',
+    date: '15 novembre 2026',
+    added: ["Carte live : les vrais vols Air Caraïbes (indicatif FWI) apparaissent en bleu, avec leur avion, leur immatriculation, leur altitude et leur vitesse. Case « Vrais vols Air Caraïbes » sous la carte pour les afficher ou les cacher."]
+  },
+  {
     version: '0.1.7',
     date: '15 novembre 2026',
     added: ["Nouvelle destination : Cancún (MMUN), depuis Pointe-à-Pitre, Fort-de-France, Punta Cana et Paris-Orly.",

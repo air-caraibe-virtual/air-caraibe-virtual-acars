@@ -431,6 +431,60 @@
     const n = Object.keys(others).length;
     $('liveCount').textContent = n === 0 ? 'Aucun autre pilote en vol pour le moment' : n === 1 ? '1 autre pilote en vol' : n + ' autres pilotes en vol';
   }
+  // ---------- Vrais vols Air Caraïbes (positions réelles ADS-B, indicatif FWI) ----------
+  const REAL_SVG = '<svg width="28" height="28" viewBox="-17 -17 34 34" style="display:block;transform-origin:center"><path d="M0 -16 C 2 -16 3 -12 3 -8 L3 -3 L16 4 L16 7 L3 4 L2 11 L6 14 L6 16 L0 15 L-6 16 L-6 14 L-2 11 L-3 4 L-16 7 L-16 4 L-3 -3 L-3 -8 C -3 -12 -2 -16 0 -16 Z" fill="#1d4ea8" stroke="#ffffff" stroke-width="1.6"/></svg>';
+  const REAL_TYPES = { A359: 'Airbus A350-900', A35K: 'Airbus A350-1000' };
+  const realMarkers = {};
+  let realData = null, realTimer = null;
+  // Position estimée maintenant à partir de la dernière position, du cap et de la vitesse (au plus 20 min)
+  function realPos(f) {
+    const mins = Math.min(20, Math.max(0, (Date.now() - f.t) / 60000));
+    if (f.ground || !f.gs || mins < 0.2) return [f.lat, f.lon];
+    const dNm = f.gs * mins / 60, r = Math.PI / 180, h = f.hdg * r;
+    const lat = f.lat + (dNm * Math.cos(h)) / 60;
+    const lon = f.lon + (dNm * Math.sin(h)) / (60 * Math.max(0.2, Math.cos(f.lat * r)));
+    return [lat, lon];
+  }
+  function drawReal() {
+    if (!map) return;
+    const on = $('realFlights').checked, list = on && realData ? (realData.flights || []) : [];
+    const seen = {};
+    list.forEach((f) => {
+      seen[f.id] = true;
+      const age = Math.round((Date.now() - f.t) / 60000);
+      const fl = f.ground ? 'Au sol' : f.alt >= 18000 ? 'FL' + String(Math.round(f.alt / 100)).padStart(3, '0') : f.alt.toLocaleString('fr-FR') + ' ft';
+      const tip = '<div class="real-tip"><b>' + esc(f.cs) + ' · Air Caraïbes</b> (vol réel)<br>' + esc(REAL_TYPES[f.type] || f.type || '') +
+        (f.reg ? ' · ' + esc(f.reg) : '') + '<br>' + fl + ' · ' + f.gs + ' kt · cap ' + String(f.hdg).padStart(3, '0') + '°<br>' +
+        '<span class="src">' + (age <= 1 ? 'Position à l\'instant' : 'Vu il y a ' + age + ' min, position estimée') + ' · données ADS-B adsb.lol</span></div>';
+      const pos = realPos(f);
+      if (!realMarkers[f.id]) {
+        realMarkers[f.id] = L.marker(pos, {
+          icon: L.divIcon({ className: 'real-plane', html: REAL_SVG + '<span class="lbl">' + esc(f.cs) + '</span>', iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 600
+        }).addTo(map).bindTooltip(tip, { direction: 'top', offset: [0, -12] });
+      } else realMarkers[f.id].setLatLng(pos).setTooltipContent(tip);
+      const el = realMarkers[f.id].getElement();
+      if (el) { const svg = el.querySelector('svg'); if (svg) svg.style.transform = 'rotate(' + f.hdg + 'deg)'; el.style.opacity = age > 10 ? '0.65' : '1'; }
+    });
+    Object.keys(realMarkers).forEach((id) => { if (!seen[id]) { map.removeLayer(realMarkers[id]); delete realMarkers[id]; } });
+    $('realCount').textContent = on && realData ? String(list.length) : '';
+  }
+  function loadReal() {
+    if (!$('realFlights').checked || !window.acv || !window.acv.realList) return;
+    window.acv.realList().then((r) => {
+      if (r && r.ok) { realData = r; drawReal(); }
+      else if (!realData) toast('Vrais vols indisponibles pour le moment');
+    }).catch(() => {});
+  }
+  function setReal(on) {
+    store.set('realFlights', on);
+    if (map) { if (on) map.attributionControl.addAttribution('Vols réels &copy; adsb.lol (ODbL)'); else map.attributionControl.removeAttribution('Vols réels &copy; adsb.lol (ODbL)'); }
+    clearInterval(realTimer); realTimer = null;
+    if (on) { loadReal(); realTimer = setInterval(() => { loadReal(); }, 3 * 60 * 1000); }
+    drawReal();
+  }
+  $('realFlights').addEventListener('change', (e) => setReal(e.target.checked));
+  setInterval(() => { if (realData && $('realFlights').checked) drawReal(); }, 20000);   // avance les avions entre deux mises à jour
+
   function liveTick() {
     if (!window.acv || !window.acv.livePost) return;
     const fresh = myLast && Date.now() - myLast.t < 10000;
@@ -1088,6 +1142,7 @@
     ['L\'import SimBrief ne marche pas', 'Mets ton identifiant SimBrief dans « Profil », génère ton plan sur SimBrief, puis clique sur « Importer mon plan SimBrief ».'],
     ['C\'est quoi le TOD ?', 'Top Of Descent : le point où tu commences ta descente. En général 3 NM par tranche de 1 000 ft à perdre.'],
     ['Comment rejoindre les autres pilotes ?', 'Sur notre serveur Discord : bouton dans l\'onglet « Profil ».'],
+    ['C\'est quoi les avions bleus sur la carte ?', 'Ce sont les vrais vols Air Caraïbes en ce moment (positions ADS-B). Tu peux les cacher avec la case « Vrais vols Air Caraïbes » sous la carte.'],
     ['J\'ai une idée pour améliorer l\'ACARS', 'Clique sur le bouton jaune « Une idée ? » en haut : ton idée arrive directement à la compagnie.'],
     ['C\'est quoi le mode bêta-testeur ?', 'Dans « Paramètres », active « Recevoir les versions bêta » pour tester les nouveautés avant leur sortie officielle.']
   ];
@@ -1227,6 +1282,7 @@
   initMap();
   if (store.get('mapSat', false)) setMapMode(true);
   if (store.get('wxRadar', false)) { $('wxRadar').checked = true; loadRadar(); }
+  if (store.get('realFlights', true)) { $('realFlights').checked = true; setReal(true); }
   if (store.get('wxClouds', false)) { $('wxClouds').checked = true; setClouds(true); }
   wxLayerLabel();
   renderCats();

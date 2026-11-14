@@ -33,6 +33,10 @@ module.exports = {
   idea: async (idea) => {
     try { return await call('POST', Object.assign({ action: 'idea' }, idea)); } catch (e) { return { ok: false, message: 'Envoi impossible (connexion ?)' }; }
   },
+  // Vrais vols Air Caraïbes (positions ADS-B relayées par le service de la compagnie)
+  realList: async () => {
+    try { return await call('GET', null, 'real'); } catch (e) { return { ok: false }; }
+  },
   liveList: async () => {
     try { return await call('GET', null, 'live'); } catch (e) { return { ok: false }; }
   }
