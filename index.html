@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#8f1238">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ACV ACARS">
+<meta name="description" content="Air Caraïbe Virtual sur téléphone : pilotes en vol, vols du jour, classement et météo.">
+<title>Air Caraïbe Virtual</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <img src="img/icon-192.png" alt="" width="34" height="34">
+  <div class="brand">
+    <div class="brand-name">Air Caraïbe Virtual</div>
+    <div class="brand-sub" id="topSub">Pilotes en vol</div>
+  </div>
+  <span id="liveBadge" class="badge">0 en vol</span>
+</header>
+
+<main>
+  <!-- CARTE -->
+  <section id="v-carte" class="view active">
+    <div id="map"></div>
+    <div class="map-tools">
+      <div class="seg" role="group" aria-label="Fond de carte">
+        <button id="btnPlan" class="active">Plan</button>
+        <button id="btnSat">Satellite</button>
+      </div>
+      <button id="btnRadar" class="chip" aria-pressed="false">Radar pluie</button>
+    </div>
+    <div id="sheet" class="sheet hidden" role="dialog" aria-label="Détails du vol">
+      <button id="sheetClose" class="sheet-x" aria-label="Fermer">×</button>
+      <div id="sheetBody"></div>
+    </div>
+  </section>
+
+  <!-- VOLS DU JOUR -->
+  <section id="v-vols" class="view">
+    <div class="pad">
+      <h1>Vols du jour</h1>
+      <p class="muted">Les mêmes 5 vols pour tous les pilotes, renouvelés chaque jour à minuit. Réserve-les dans l'ACARS sur ton PC.</p>
+      <div id="daily" class="list"></div>
+    </div>
+  </section>
+
+  <!-- CLASSEMENT -->
+  <section id="v-classement" class="view">
+    <div class="pad">
+      <h1>Classement</h1>
+      <p class="muted">Les atterrissages les plus doux de la compagnie.</p>
+      <div id="podium" class="podium"></div>
+      <div id="board" class="list"></div>
+      <button id="btnBoard" class="btn outline wide">Actualiser</button>
+    </div>
+  </section>
+
+  <!-- MÉTÉO -->
+  <section id="v-meteo" class="view">
+    <div class="pad">
+      <h1>Météo des escales</h1>
+      <p class="muted" id="wxNote">Bulletins réels des aéroports (METAR).</p>
+      <div id="wx" class="list"></div>
+    </div>
+  </section>
+
+  <!-- INFOS -->
+  <section id="v-infos" class="view">
+    <div class="hero">
+      <div class="hero-in">
+        <div class="kicker">BIENVENUE À BORD</div>
+        <h1>Air Caraïbe Virtual sur ton téléphone</h1>
+        <p>Suis les pilotes en vol, consulte les vols du jour, le classement et la météo, où que tu sois.</p>
+      </div>
+    </div>
+    <div class="pad">
+      <div class="card">
+        <h2>Installer l'appli sur ton téléphone</h2>
+        <p class="muted"><b>Android (Chrome)</b> : menu ⋮ puis « Ajouter à l'écran d'accueil » ou « Installer l'application ».</p>
+        <p class="muted"><b>iPhone (Safari)</b> : bouton Partager puis « Sur l'écran d'accueil ».</p>
+        <button id="btnInstall" class="btn primary wide hidden">Installer l'appli</button>
+      </div>
+      <div class="card">
+        <h2>Voler avec l'ACARS</h2>
+        <p class="muted">Pour voler, réserver et enregistrer tes PIREPs, installe l'ACARS sur ton PC Windows à côté de MSFS 2024.</p>
+        <a class="btn outline wide" href="https://github.com/air-caraibe-virtual/air-caraibe-virtual-acars/releases/latest/download/air-caraibe-virtual-acars-setup.exe">Télécharger l'ACARS pour PC</a>
+      </div>
+      <div class="card">
+        <h2>Communauté</h2>
+        <a class="btn discord wide" href="https://discord.gg/FtHDwjt9C9" target="_blank" rel="noopener">Rejoindre notre serveur Discord</a>
+      </div>
+      <p class="tiny muted">Compagnie aérienne virtuelle sur Microsoft Flight Simulator 2024, sans lien avec une compagnie réelle.</p>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Navigation">
+  <button class="tab active" data-v="carte"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z M9 3v15 M15 6v15"/></svg>Carte</button>
+  <button class="tab" data-v="vols"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16l20-6-3-2-6 1-6-6-2 1 4 6-5 1-2-2-1 1z M3 21h18"/></svg>Vols</button>
+  <button class="tab" data-v="classement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8 M12 17v4 M7 4h10v5a5 5 0 0 1-10 0z M17 6h3a3 3 0 0 1-3 4 M7 6H4a3 3 0 0 0 3 4"/></svg>Classement</button>
+  <button class="tab" data-v="meteo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8z"/></svg>Météo</button>
+  <button class="tab" data-v="infos"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6 M12 7.5v.5"/></svg>Infos</button>
+</nav>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="lib/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
