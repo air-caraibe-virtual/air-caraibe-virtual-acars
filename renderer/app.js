@@ -433,7 +433,7 @@
   }
   // ---------- Vrais vols Air Caraïbes (positions réelles ADS-B, indicatif FWI) ----------
   const REAL_SVG = '<svg width="28" height="28" viewBox="-17 -17 34 34" style="display:block;transform-origin:center"><path d="M0 -16 C 2 -16 3 -12 3 -8 L3 -3 L16 4 L16 7 L3 4 L2 11 L6 14 L6 16 L0 15 L-6 16 L-6 14 L-2 11 L-3 4 L-16 7 L-16 4 L-3 -3 L-3 -8 C -3 -12 -2 -16 0 -16 Z" fill="#1d4ea8" stroke="#ffffff" stroke-width="1.6"/></svg>';
-  const REAL_TYPES = { A359: 'Airbus A350-900', A35K: 'Airbus A350-1000' };
+  const REAL_TYPES = { A359: 'Airbus A350-900', A35K: 'Airbus A350-1000', A332: 'Airbus A330-200', A333: 'Airbus A330-300', AT75: 'ATR 72-500', AT76: 'ATR 72-600' };
   const realMarkers = {};
   let realData = null, realTimer = null;
   // Position estimée maintenant à partir de la dernière position, du cap et de la vitesse (au plus 20 min)
