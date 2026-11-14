@@ -832,10 +832,10 @@
   $('btnStart').addEventListener('click', closeWelcome);
   $('btnReplayWelcome').addEventListener('click', openWelcome);
 
-  // Message d'accueil enregistré (voix + musique zouk), lancé tout seul à l'ouverture de l'accueil.
-  // « Bonjour » de 5 h à 18 h, « Bonsoir » le reste du temps, selon l'heure de l'ordinateur.
+  // Musique zouk d'accueil (sans voix), lancée toute seule à l'ouverture de l'accueil.
+  // Le titre dit « Bonjour » de 5 h à 18 h, « Bonsoir » le reste du temps.
   function isEvening() { const h = new Date().getHours(); return h >= 18 || h < 5; }
-  const welcomeAudio = new Audio(isEvening() ? 'assets/welcome-bonsoir.mp3' : 'assets/welcome-bonjour.mp3');
+  const welcomeAudio = new Audio('assets/welcome-music.mp3');
   welcomeAudio.preload = 'auto';
   welcomeAudio.volume = 0.9;
   let voiceTimer = null;
@@ -849,8 +849,6 @@
     setSpeaking(false);
   }
   function speakWelcome() {
-    const want = isEvening() ? 'assets/welcome-bonsoir.mp3' : 'assets/welcome-bonjour.mp3';
-    if (welcomeAudio.src.indexOf(want) === -1) welcomeAudio.src = want;
     try { welcomeAudio.currentTime = 0; } catch (e) { /* rien */ }
     const p = welcomeAudio.play();
     if (p && p.catch) p.catch(() => setSpeaking(false));

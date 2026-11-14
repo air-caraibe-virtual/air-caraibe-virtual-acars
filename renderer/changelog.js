@@ -8,10 +8,10 @@ window.ACV_CHANGELOG = [
       'Météo réelle des aéroports (METAR) dans la carte live : vent, visibilité, température, QNH, nuages et catégorie VFR/IFR, pour ton vol ou toutes les escales.',
       'La météo s\'affiche aussi au survol des aéroports sur la carte.'
     ],
-    fixed: [
-      'Ti-Pilote a maintenant une voix d\'homme pour l\'accueil.'
-    ],
-    removed: []
+    fixed: [],
+    removed: [
+      'La voix de l\'accueil : Ti-Pilote t\'accueille maintenant en musique zouk, sans voix.'
+    ]
   },
   {
     version: '0.1.1',
