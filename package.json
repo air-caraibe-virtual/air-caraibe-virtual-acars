@@ -1,6 +1,6 @@
 {
   "name": "air-caraibe-virtual-acars",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Air Caraïbe Virtual — ACARS bêta",
   "main": "main.js",
   "scripts": {
@@ -45,9 +45,8 @@
       "signAndEditExecutable": true
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Air Caraibe Virtual",
@@ -57,7 +56,9 @@
         "fr_FR"
       ],
       "language": "1036",
-      "artifactName": "Air-Caraibe-Virtual-Setup.exe"
+      "artifactName": "Air-Caraibe-Virtual-Setup.exe",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
     },
     "publish": [
       {
