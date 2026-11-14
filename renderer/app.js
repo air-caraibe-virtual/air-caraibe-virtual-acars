@@ -71,31 +71,43 @@
   const pad2 = (n) => String(n).padStart(2, '0');
   const fmtDur = (mins) => Math.floor(mins / 60) + ' h ' + pad2(Math.round(mins % 60));
 
-  function makeFlight(cat, prev) {
-    const pool = ROUTES.filter((r) => cat === 'all' || r[2] === cat);
-    let r, from, to, tries = 0;
-    do {
-      r = pool[Math.floor(Math.random() * pool.length)];
-      const flip = Math.random() < 0.5;
-      from = flip ? r[1] : r[0]; to = flip ? r[0] : r[1];
-      tries++;
-    } while (prev && prev.from === from && prev.to === to && tries < 10);
-    const a = AIRPORTS[from], b = AIRPORTS[to];
-    const nm = Math.round(distanceNm(a[1], a[2], b[1], b[2]));
-    let aircraft, speed;
-    if (from === 'TFFJ' || to === 'TFFJ') { aircraft = 'DHC-6 Twin Otter'; speed = 150; }
-    else if (r[2] === 'transat') { aircraft = 'Airbus A350-900'; speed = 480; }
-    else if (nm < 350) { aircraft = 'ATR 72-600'; speed = 270; }
-    else { aircraft = 'Airbus A320neo'; speed = 450; }
-    const mins = Math.round(nm / speed * 60 + 20);
+  // Avion attribué à une ligne : Twin Otter pour Saint-Barth (piste courte), ATR pour les courtes
+  // distances, A320neo pour les Caraïbes, A350 pour la transatlantique.
+  function planeFor(from, to, cat, nm) {
+    if (from === 'TFFJ' || to === 'TFFJ') return { aircraft: 'DHC-6 Twin Otter', speed: 150 };
+    if (cat === 'transat') return { aircraft: 'Airbus A350-900', speed: 480 };
+    if (nm < 350) return { aircraft: 'ATR 72-600', speed: 270 };
+    return { aircraft: 'Airbus A320neo', speed: 450 };
+  }
+  // Toutes les lignes, dans les deux sens, avec leur avion
+  const LEGS = [];
+  ROUTES.forEach(([x, y, c]) => {
+    [[x, y], [y, x]].forEach(([from, to]) => {
+      const a = AIRPORTS[from], b = AIRPORTS[to];
+      const nm = Math.round(distanceNm(a[1], a[2], b[1], b[2]));
+      const p = planeFor(from, to, c, nm);
+      LEGS.push({ from, to, cat: c, nm, aircraft: p.aircraft, mins: Math.round(nm / p.speed * 60 + 20) });
+    });
+  });
+  function legsFor(cat, plane) {
+    return LEGS.filter((l) => (cat === 'all' || l.cat === cat) && (plane === 'all' || l.aircraft === plane));
+  }
+  function flightFromLeg(l) {
     const d = new Date(Date.now() + (30 + Math.floor(Math.random() * 43) * 5) * 60000);
     d.setMinutes(Math.round(d.getMinutes() / 5) * 5, 0, 0);
-    return {
+    return Object.assign({}, l, {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       num: 'ACX ' + (100 + Math.floor(Math.random() * 900)),
-      from, to, aircraft, nm, mins, cat: r[2],
       dep: pad2(d.getHours()) + ':' + pad2(d.getMinutes())
-    };
+    });
+  }
+  function makeFlight(cat, prev, plane) {
+    const pool = legsFor(cat, plane || 'all');
+    if (!pool.length) return null;
+    let l, tries = 0;
+    do { l = pool[Math.floor(Math.random() * pool.length)]; tries++; }
+    while (prev && pool.length > 1 && prev.from === l.from && prev.to === l.to && tries < 10);
+    return flightFromLeg(l);
   }
 
   // ---------- Navigation ----------
@@ -309,7 +321,8 @@
 
   // ---------- Vols aléatoires ----------
   let cat = 'all';
-  let current = makeFlight(cat, null);
+  let plane = 'all';
+  let current = makeFlight(cat, null, plane);
   let currentBooked = false;
 
   function renderCats() {
@@ -320,6 +333,13 @@
     }));
   }
   function renderRandom() {
+    const bk = $('btnBook');
+    if (!current) {
+      $('randomFlight').innerHTML = '<div class="empty">Aucune ligne ne correspond : le ' + esc(plane) + ' ne vole pas en « ' + CAT_LABELS[cat] + ' ». Choisis une autre catégorie ou un autre avion.</div>';
+      bk.disabled = true; $('btnNewFlight').disabled = true;
+      return;
+    }
+    bk.disabled = false; $('btnNewFlight').disabled = false;
     const f = current, a = AIRPORTS[f.from], b = AIRPORTS[f.to];
     $('randomFlight').innerHTML =
       '<div class="fb-top"><span style="color:#8f1238">' + f.num + '</span><span class="muted">' + CAT_LABELS[f.cat] + '</span></div>' +
@@ -330,24 +350,48 @@
       '<div><span>Départ proposé</span><b>' + f.dep + '</b></div>' +
       '<div><span>Distance</span><b>' + f.nm + ' NM</b></div>' +
       '<div><span>Durée estimée</span><b>' + fmtDur(f.mins) + '</b></div></div>';
-    const bk = $('btnBook');
     bk.textContent = currentBooked ? 'Vol réservé' : 'Réserver ce vol';
     bk.classList.toggle('done', currentBooked);
   }
   function newFlight() {
-    current = makeFlight(cat, current);
+    current = makeFlight(cat, current, plane);
     currentBooked = false;
-    renderCats(); renderRandom();
+    renderCats(); renderRandom(); renderPlaneRoutes();
   }
+  function bookFlight(f) {
+    const list = store.get('bookings', []);
+    list.push(f);
+    store.set('bookings', list);
+    toast(f.num + ' ajouté à « Mes vols »');
+  }
+  function renderPlaneRoutes() {
+    if (plane === 'all') {
+      $('planeRoutesTitle').textContent = 'Vols par avion';
+      $('planeRoutes').className = 'muted small';
+      $('planeRoutes').textContent = 'Choisis un avion pour voir toutes les lignes qu\'il dessert.';
+      return;
+    }
+    const legs = legsFor(cat, plane);
+    $('planeRoutesTitle').textContent = 'Lignes en ' + plane;
+    $('planeRoutes').className = '';
+    if (!legs.length) { $('planeRoutes').innerHTML = '<div class="empty">Aucune ligne dans cette catégorie.</div>'; return; }
+    $('planeRoutes').innerHTML = '<ul class="route-list">' + legs.map((l, k) =>
+      '<li><div><b>' + l.from + ' → ' + l.to + '</b><div class="muted">' + esc(AIRPORTS[l.from][0]) + ' → ' + esc(AIRPORTS[l.to][0]) +
+      ' · ' + l.nm + ' NM · ' + fmtDur(l.mins) + '</div></div>' +
+      '<button class="btn outline small" data-leg="' + k + '">Réserver</button></li>').join('') + '</ul>';
+    $('planeRoutes').querySelectorAll('[data-leg]').forEach((b) => b.addEventListener('click', () => {
+      const f = flightFromLeg(legs[Number(b.dataset.leg)]);
+      bookFlight(f);
+      b.textContent = 'Réservé'; b.disabled = true;
+    }));
+  }
+  $('planeSelect').addEventListener('change', (e) => { plane = e.target.value; newFlight(); });
   $('btnNewFlight').addEventListener('click', newFlight);
   $('btnBook').addEventListener('click', () => {
-    if (currentBooked) return;
-    const list = store.get('bookings', []);
-    list.push(current);
-    store.set('bookings', list);
+    if (currentBooked || !current) return;
+    bookFlight(current);
     currentBooked = true;
     renderRandom();
-    toast(current.num + ' ajouté à « Mes vols »');
   });
   $('airportList').innerHTML = Object.entries(AIRPORTS).map(([code, a]) =>
     '<li><b>' + code + '</b><span class="muted">' + esc(a[0]) + '</span></li>').join('');

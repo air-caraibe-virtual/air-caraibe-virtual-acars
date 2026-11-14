@@ -75,6 +75,17 @@
           <h1>Vol aléatoire</h1>
           <span class="muted small">Réseau de la compagnie</span>
         </div>
+        <div class="filters">
+          <label class="field inline-field" for="planeSelect">Avion
+            <select id="planeSelect">
+              <option value="all">Tous les avions</option>
+              <option value="DHC-6 Twin Otter">DHC-6 Twin Otter</option>
+              <option value="ATR 72-600">ATR 72-600</option>
+              <option value="Airbus A320neo">Airbus A320neo</option>
+              <option value="Airbus A350-900">Airbus A350-900</option>
+            </select>
+          </label>
+        </div>
         <div id="catPills" class="pills"></div>
         <div id="randomFlight" class="flight-box"></div>
         <div class="actions">
@@ -83,6 +94,10 @@
         </div>
       </div>
       <aside class="side">
+        <div class="card">
+          <h2 id="planeRoutesTitle">Vols par avion</h2>
+          <div id="planeRoutes" class="muted small">Choisis un avion pour voir toutes les lignes qu'il dessert.</div>
+        </div>
         <div class="card">
           <h2>Nos escales</h2>
           <ul id="airportList" class="plain-list"></ul>

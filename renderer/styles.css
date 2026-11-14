@@ -149,3 +149,12 @@ td { padding: 12px 8px; border-top: 1px solid var(--line); vertical-align: middl
 .ofp-grid span { display: block; font-size: 12px; color: var(--muted); }
 .ofp-grid b { font-size: 15px; }
 .ofp-route { margin-top: 10px; font-family: Consolas, "Courier New", monospace; font-size: 12px; color: var(--ink); word-break: break-word; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.inline-field { margin-top: 0; min-width: 240px; }
+.inline-field select { font: inherit; font-weight: 600; font-size: 15px; padding: 10px 12px; border-radius: 10px; border: 1px solid #d9c6cd; min-height: 46px; background: #fff; color: var(--ink); }
+.route-list { list-style: none; margin: 0; padding: 0; }
+.route-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.route-list li:last-child { border-bottom: none; }
+.route-list b { color: var(--ink); }
+.route-list .muted { font-size: 12px; }
