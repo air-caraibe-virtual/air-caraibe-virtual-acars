@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.basemaps.cartocdn.com https://server.arcgisonline.com; connect-src 'self'; font-src 'self'">
+<title>Air Caraïbe Virtual — ACARS bêta</title>
+<link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="bg1" class="bg bg-photo1 visible" aria-hidden="true"></div>
+<div id="bg2" class="bg bg-photo2" aria-hidden="true"></div>
+<div class="veil" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <img src="assets/icon.png" alt="" width="40" height="40">
+    <div>
+      <div class="brand-name">Air Caraïbe Virtual</div>
+      <div class="brand-sub">ACARS · <span class="beta">BÊTA</span> <span id="version"></span></div>
+    </div>
+  </div>
+  <nav class="nav" aria-label="Navigation principale">
+    <button class="nav-btn active" data-view="carte">Carte live</button>
+    <button class="nav-btn" data-view="vols">Vols aléatoires</button>
+    <button class="nav-btn" data-view="mesvols">Mes vols</button>
+    <button class="nav-btn" data-view="pireps">PIREPs</button>
+    <button class="nav-btn" data-view="profil">Profil</button>
+  </nav>
+  <div id="simPill" class="sim-pill off" role="status" aria-live="polite"><span class="dot"></span><span id="simText">Recherche du simulateur…</span></div>
+</header>
+
+<main>
+  <!-- CARTE LIVE -->
+  <section id="view-carte" class="view active">
+    <div class="layout">
+      <div class="card map-card">
+        <div class="card-head">
+          <h1>Carte des vols</h1>
+          <div class="toggle" role="group" aria-label="Type de carte">
+            <button id="btnPlan" class="tog active">Plan</button>
+            <button id="btnSat" class="tog">Satellite</button>
+          </div>
+        </div>
+        <div id="map" class="map"></div>
+        <div class="map-foot">
+          <label class="check"><input type="checkbox" id="followPlane" checked> Suivre mon avion</label>
+          <button id="btnClearTrail" class="link-btn">Effacer la trace</button>
+        </div>
+      </div>
+      <aside class="side">
+        <div class="card accent-top">
+          <div class="row muted small"><span>Mon avion</span><span id="liveTitle">—</span></div>
+          <div class="live-grid">
+            <div><span>Altitude</span><b id="liveAlt">—</b></div>
+            <div><span>Vitesse sol</span><b id="liveGs">—</b></div>
+            <div><span>Cap</span><b id="liveHdg">—</b></div>
+            <div><span>Vario</span><b id="liveVs">—</b></div>
+            <div><span>Phase</span><b id="livePhase">—</b></div>
+            <div><span>Position</span><b id="livePos">—</b></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Vol en cours</h2>
+          <div id="activeFlight" class="muted">Aucun vol démarré. Réserve un vol dans « Vols aléatoires », puis démarre-le dans « Mes vols ».</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- VOLS ALEATOIRES -->
+  <section id="view-vols" class="view">
+    <div class="layout">
+      <div class="card wide">
+        <div class="card-head">
+          <h1>Vol aléatoire</h1>
+          <span class="muted small">Réseau de la compagnie</span>
+        </div>
+        <div id="catPills" class="pills"></div>
+        <div id="randomFlight" class="flight-box"></div>
+        <div class="actions">
+          <button id="btnNewFlight" class="btn primary">Proposer un autre vol</button>
+          <button id="btnBook" class="btn outline">Réserver ce vol</button>
+        </div>
+      </div>
+      <aside class="side">
+        <div class="card">
+          <h2>Nos escales</h2>
+          <ul id="airportList" class="plain-list"></ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- MES VOLS -->
+  <section id="view-mesvols" class="view">
+    <div class="card">
+      <div class="card-head"><h1>Mes vols réservés</h1></div>
+      <div id="bookings"></div>
+    </div>
+  </section>
+
+  <!-- PIREPS -->
+  <section id="view-pireps" class="view">
+    <div class="card">
+      <div class="card-head"><h1>Mes PIREPs</h1><span class="muted small">Rapports de vol enregistrés automatiquement</span></div>
+      <div id="pireps"></div>
+    </div>
+  </section>
+
+  <!-- PROFIL -->
+  <section id="view-profil" class="view">
+    <div class="layout">
+      <div class="card wide">
+        <h1>Mon profil pilote</h1>
+        <label class="field">Prénom<input id="profName" type="text" placeholder="Ex. : Marc"></label>
+        <label class="field">Indicatif pilote<input id="profCallsign" type="text" placeholder="ACX123"></label>
+        <div class="actions">
+          <button id="btnSaveProfile" class="btn primary">Enregistrer</button>
+          <button id="btnReplayWelcome" class="btn outline">Revoir l'accueil</button>
+        </div>
+      </div>
+      <aside class="side">
+        <div class="card">
+          <h2>Communauté</h2>
+          <p class="muted">Retrouve les autres pilotes de la compagnie sur notre serveur Discord.</p>
+          <button class="btn discord js-discord">Rejoindre notre serveur Discord</button>
+        </div>
+        <div class="card">
+          <h2>Mises à jour</h2>
+          <p class="muted small">Le logiciel cherche tout seul les nouvelles versions publiées sur le GitHub de la compagnie, et se met à jour.</p>
+          <label class="field">Pseudo GitHub de la compagnie<input id="updOwner" type="text" placeholder="Ex. : aircaraibevirtual"></label>
+          <div class="actions">
+            <button id="btnUpdSave" class="btn primary small">Enregistrer</button>
+            <button id="btnUpdCheck" class="btn outline small">Vérifier maintenant</button>
+          </div>
+          <p id="updStatus" class="muted small" style="margin-bottom:0">Mises à jour pas encore configurées</p>
+        </div>
+        <div class="card">
+          <h2>À propos de la bêta</h2>
+          <p class="muted small">Version bêta : la liaison avec MSFS 2024 est expérimentale. Les vols, réservations et PIREPs sont gardés sur cet ordinateur.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<!-- ACCUEIL NOUVEAU PILOTE -->
+<div id="welcome" class="welcome hidden" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+  <div class="welcome-inner">
+    <div class="welcome-left">
+      <div class="kicker">BIENVENUE À BORD</div>
+      <h1 id="welcomeTitle">Bienvenue, commandant !</h1>
+      <p class="lead">Ton compte pilote est prêt. Écoute le message de bienvenue de la compagnie, puis réserve ton premier vol au départ des Antilles.</p>
+      <div id="voiceOn" class="voice-on hidden" aria-live="polite"><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Message de bienvenue en cours…</div>
+      <div id="voiceWarn" class="voice-warn hidden">Aucune voix française n'est installée sur cet ordinateur : le message est affiché ci-dessous.</div>
+      <figure class="script-box">
+        <figcaption>MESSAGE DE BIENVENUE</figcaption>
+        <p id="welcomeScript"></p>
+      </figure>
+    </div>
+    <div class="welcome-card">
+      <h2>Ton profil pilote</h2>
+      <label class="field">Prénom<input id="wName" type="text" placeholder="Ex. : Marc"></label>
+      <label class="field">Indicatif pilote<input id="wCallsign" type="text" value="ACX" placeholder="ACX123"></label>
+      <div class="steps">
+        <div class="steps-title">TES PREMIERS PAS</div>
+        <div class="step"><span class="num done">1</span>Compte créé</div>
+        <div class="step"><span class="num discord-c">2</span>Rejoindre le serveur Discord</div>
+        <div class="step"><span class="num active">3</span>Réserver un premier vol</div>
+        <div class="step"><span class="num">4</span>Lancer MSFS 2024 avec l'ACARS ouvert</div>
+      </div>
+      <button class="btn discord js-discord">Rejoindre notre serveur Discord</button>
+      <button id="btnStart" class="btn dark">Commencer</button>
+    </div>
+  </div>
+</div>
+
+<div id="updBanner" class="upd-banner hidden" role="status">
+  <span id="updBannerText">Une mise à jour est prête.</span>
+  <button id="btnUpdInstall" class="btn primary small">Redémarrer et mettre à jour</button>
+  <button id="btnUpdLater" class="btn outline small">Plus tard</button>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="../node_modules/leaflet/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

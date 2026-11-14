@@ -1,0 +1,71 @@
+{
+  "name": "air-caraibe-virtual-acars",
+  "version": "0.3.0",
+  "description": "Air Caraïbe Virtual — ACARS bêta",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "author": "Air Caraibe Virtual",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "electron-updater": "^6.8.11",
+    "leaflet": "^1.9.4",
+    "node-simconnect": "^4.2.1"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.aircaraibevirtual.acars",
+    "productName": "Air Caraibe Virtual",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "sim.js",
+      "renderer/**/*",
+      "package.json",
+      "updater.js"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Air Caraibe Virtual",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerLanguages": [
+        "fr_FR"
+      ],
+      "language": "1036",
+      "artifactName": "Air-Caraibe-Virtual-Beta-Setup-${version}.exe"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "aircaraibevirtual",
+        "repo": "air-caraibe-virtual-acars",
+        "releaseType": "release"
+      }
+    ]
+  }
+}
