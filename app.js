@@ -76,11 +76,11 @@
       const l = pool[Math.floor(rnd() * pool.length)];
       used.add(l.from + l.to);
       const depMin = 6 * 60 + Math.floor(rnd() * 15) * 60 + [0, 15, 30, 45][Math.floor(rnd() * 4)];
-      return Object.assign({}, l, { num: 'ACX ' + (100 + Math.floor(rnd() * 900)), dep: pad2(Math.floor(depMin / 60) % 24) + ':' + pad2(depMin % 60) });
+      return Object.assign({}, l, { num: 'FWE ' + (100 + Math.floor(rnd() * 900)), dep: pad2(Math.floor(depMin / 60) % 24) + ':' + pad2(depMin % 60) });
     });
   }
   function simbriefUrl(f) {
-    const q = new URLSearchParams({ airline: 'ACX', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
+    const q = new URLSearchParams({ airline: 'FWE', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
       orig: f.from, dest: f.to, deph: f.dep.slice(0, 2), depm: f.dep.slice(3, 5), steh: String(Math.floor(f.mins / 60)), stem: String(f.mins % 60) });
     return 'https://dispatch.simbrief.com/options/custom?' + q.toString();
   }
