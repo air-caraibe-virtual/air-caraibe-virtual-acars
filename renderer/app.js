@@ -385,7 +385,7 @@
     refreshWelcome();
     $('welcome').classList.remove('hidden');
     stopVoice();
-    voiceTimer = setTimeout(() => speakWelcome(0), 900);
+    voiceTimer = setTimeout(speakWelcome, 600);
   }
   function closeWelcome() {
     stopVoice();
@@ -400,40 +400,24 @@
   $('btnStart').addEventListener('click', closeWelcome);
   $('btnReplayWelcome').addEventListener('click', openWelcome);
 
-  // La voix démarre toute seule à l'ouverture de l'accueil.
+  // Message d'accueil enregistré (voix + musique des îles), lancé tout seul à l'ouverture de l'accueil.
+  const welcomeAudio = new Audio('assets/welcome.mp3');
+  welcomeAudio.preload = 'auto';
+  welcomeAudio.volume = 0.9;
   let voiceTimer = null;
   function setSpeaking(on) { $('voiceOn').classList.toggle('hidden', !on); }
+  welcomeAudio.addEventListener('playing', () => setSpeaking(true));
+  welcomeAudio.addEventListener('ended', () => setSpeaking(false));
+  welcomeAudio.addEventListener('pause', () => setSpeaking(false));
   function stopVoice() {
     clearTimeout(voiceTimer);
-    try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { /* rien */ }
+    try { welcomeAudio.pause(); welcomeAudio.currentTime = 0; } catch (e) { /* rien */ }
     setSpeaking(false);
   }
-  function frenchVoice() {
-    const voices = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
-    return voices.find((v) => v.lang === 'fr-FR') || voices.find((v) => (v.lang || '').toLowerCase().indexOf('fr') === 0) || null;
-  }
-  function speakWelcome(attempt) {
-    if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') {
-      $('voiceWarn').classList.remove('hidden');
-      return;
-    }
-    const voices = window.speechSynthesis.getVoices();
-    // Windows charge ses voix un peu après le démarrage : on attend jusqu'à 3 s.
-    if (!voices.length && (attempt || 0) < 10) {
-      voiceTimer = setTimeout(() => speakWelcome((attempt || 0) + 1), 300);
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(welcomeScript($('wName').value));
-    u.lang = 'fr-FR';
-    u.rate = 0.95;
-    const v = frenchVoice();
-    if (v) u.voice = v;
-    else $('voiceWarn').classList.remove('hidden');
-    u.onstart = () => setSpeaking(true);
-    u.onend = () => setSpeaking(false);
-    u.onerror = () => setSpeaking(false);
-    window.speechSynthesis.speak(u);
+  function speakWelcome() {
+    try { welcomeAudio.currentTime = 0; } catch (e) { /* rien */ }
+    const p = welcomeAudio.play();
+    if (p && p.catch) p.catch(() => setSpeaking(false));
   }
 
   function loadProfile() {
