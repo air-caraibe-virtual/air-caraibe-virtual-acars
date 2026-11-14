@@ -178,3 +178,11 @@ td.num { font-variant-numeric: tabular-nums; font-weight: 700; }
 .prog-grid b { font-size: 15px; font-variant-numeric: tabular-nums; }
 .tod-icon { background: none; border: none; }
 .tod-icon span { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 24px; border-radius: 99px; background: #ffd23f; color: #2b1a22; font-weight: 800; font-size: 12px; border: 2px solid #2b1a22; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+
+.daily-card { margin-bottom: 20px; }
+.daily-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.daily { border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.daily.done { background: #eef8f1; border-color: #bfe3cb; }
+.daily .route { font-family: var(--serif); font-size: 24px; font-weight: 700; }
+.daily .meta { font-size: 13px; color: var(--muted); }
+.daily .btn { margin-top: 6px; align-self: flex-start; }

@@ -122,6 +122,7 @@
     if (name === 'mesvols') renderBookings();
     if (name === 'pireps') renderPireps();
     if (name === 'classement') renderBoard();
+    if (name === 'vols') renderDaily();
   }
 
   // ---------- Carte (plan / satellite) ----------
@@ -470,6 +471,57 @@
     }));
   }
   $('planeSelect').addEventListener('change', (e) => { plane = e.target.value; newFlight(); });
+
+  // ---------- Vols du jour : les mêmes pour tous les pilotes, tirés à partir de la date ----------
+  function todayKey() { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function seeded(seedText) {
+    let h = 2166136261;
+    for (let i = 0; i < seedText.length; i++) { h ^= seedText.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function dailyFlights() {
+    const day = todayKey();
+    const rnd = seeded('acv-' + day);
+    // 3 inter-îles, 1 Caraïbes, 1 transatlantique, sans doublon
+    const plan = ['iles', 'iles', 'iles', 'carib', 'transat'];
+    const used = new Set();
+    return plan.map((c, i) => {
+      const pool = LEGS.filter((l) => l.cat === c && !used.has(l.from + l.to));
+      const l = pool[Math.floor(rnd() * pool.length)];
+      used.add(l.from + l.to);
+      const depMin = 6 * 60 + Math.floor(rnd() * 15) * 60 + [0, 15, 30, 45][Math.floor(rnd() * 4)];
+      return Object.assign({}, l, {
+        daily: day, id: 'daily-' + day + '-' + i,
+        num: 'ACX ' + (100 + Math.floor(rnd() * 900)),
+        dep: pad2(Math.floor(depMin / 60) % 24) + ':' + pad2(depMin % 60)
+      });
+    });
+  }
+  function renderDaily() {
+    const list = dailyFlights();
+    const today = new Date().toLocaleDateString('fr-FR');
+    const pireps = store.get('pireps', []);
+    const booked = store.get('bookings', []);
+    let done = 0;
+    $('dailyFlights').innerHTML = list.map((f, k) => {
+      const isDone = pireps.some((p) => p.status === 'Accepté' && p.date === today && p.from === f.from && p.to === f.to);
+      const isBooked = booked.some((b) => b.id === f.id);
+      if (isDone) done++;
+      return '<div class="daily' + (isDone ? ' done' : '') + '">' +
+        '<div class="row small"><b style="color:#8f1238">' + f.num + '</b><span class="muted">' + f.dep + '</span></div>' +
+        '<div class="route">' + f.from + ' → ' + f.to + '</div>' +
+        '<div class="meta">' + esc(AIRPORTS[f.from][0]) + ' → ' + esc(AIRPORTS[f.to][0]) + '</div>' +
+        '<div class="meta">' + esc(f.aircraft) + ' · ' + f.nm + ' NM · ' + fmtDur(f.mins) + '</div>' +
+        (isDone ? '<span class="tag ok">Fait aujourd\'hui</span>'
+          : '<button class="btn ' + (isBooked ? 'outline' : 'primary') + ' small" data-daily="' + k + '"' + (isBooked ? ' disabled' : '') + '>' + (isBooked ? 'Réservé' : 'Réserver') + '</button>') +
+        '</div>';
+    }).join('');
+    $('dailyCount').textContent = done + ' / ' + list.length + ' faits';
+    $('dailyFlights').querySelectorAll('[data-daily]').forEach((b) => b.addEventListener('click', () => {
+      bookFlight(list[Number(b.dataset.daily)]);
+      renderDaily();
+    }));
+  }
   $('btnNewFlight').addEventListener('click', newFlight);
   $('btnBook').addEventListener('click', () => {
     if (currentBooked || !current) return;
@@ -685,6 +737,7 @@
   if (store.get('mapSat', false)) setMapMode(true);
   renderCats();
   renderRandom();
+  renderDaily();
   renderActive();
   drawRoute(getActive());
   loadProfile();
