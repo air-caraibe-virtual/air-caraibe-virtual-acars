@@ -280,6 +280,63 @@
     drawTod(a);
   }
 
+  // ---------- Avions des autres pilotes en vol ----------
+  const OTHER_SVG = '<svg width="30" height="30" viewBox="-17 -17 34 34" style="display:block;transform-origin:center"><path d="M0 -16 C 2 -16 3 -12 3 -8 L3 -3 L16 4 L16 7 L3 4 L2 11 L6 14 L6 16 L0 15 L-6 16 L-6 14 L-2 11 L-3 4 L-16 7 L-16 4 L-3 -3 L-3 -8 C -3 -12 -2 -16 0 -16 Z" fill="#0e8a9a" stroke="#ffffff" stroke-width="1.6"/></svg>';
+  const others = {};
+  let myLast = null;       // dernière donnée du simulateur
+  let wasSharing = false;  // j'envoyais ma position
+  function pilotId() {
+    let id = store.get('pilotId', null);
+    if (!id) { id = 'p-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); store.set('pilotId', id); }
+    return id;
+  }
+  function drawOthers(list) {
+    if (!map || !Array.isArray(list)) return;
+    const me = pilotId();
+    const seen = {};
+    list.filter((p) => p.id !== me).forEach((p) => {
+      seen[p.id] = true;
+      const fl = p.alt >= 18000 ? 'FL' + String(Math.round(p.alt / 100)).padStart(3, '0') : Math.round(p.alt).toLocaleString('fr-FR') + ' ft';
+      const tip = '<div class="other-tip"><b>' + esc(p.pilot) + (p.callsign ? ' · ' + esc(p.callsign) : '') + '</b><br>' +
+        esc(p.num || 'Vol libre') + (p.route ? ' · ' + esc(p.route) : '') + '<br>' + esc(p.aircraft || '') +
+        '<br>' + fl + ' · ' + Math.round(p.gs) + ' kt' + (p.phase ? ' · ' + esc(p.phase) : '') + '</div>';
+      if (!others[p.id]) {
+        others[p.id] = L.marker([p.lat, p.lon], {
+          icon: L.divIcon({ className: 'other-plane', html: OTHER_SVG, iconSize: [30, 30], iconAnchor: [15, 15] }), zIndexOffset: 800
+        }).addTo(map).bindTooltip(tip, { direction: 'top', offset: [0, -12] });
+      } else {
+        others[p.id].setLatLng([p.lat, p.lon]).setTooltipContent(tip);
+      }
+      const el = others[p.id].getElement();
+      if (el) { const svg = el.querySelector('svg'); if (svg) svg.style.transform = 'rotate(' + p.hdg + 'deg)'; }
+    });
+    Object.keys(others).forEach((id) => { if (!seen[id]) { map.removeLayer(others[id]); delete others[id]; } });
+    const n = Object.keys(others).length;
+    $('liveCount').textContent = n === 0 ? 'Aucun autre pilote en vol pour le moment' : n === 1 ? '1 autre pilote en vol' : n + ' autres pilotes en vol';
+  }
+  function liveTick() {
+    if (!window.acv || !window.acv.livePost) return;
+    const fresh = myLast && Date.now() - myLast.t < 10000;
+    const flying = fresh && (!myLast.onGround || myLast.gs > 3);
+    if (flying) {
+      const id = pilotIdentity(), a = getActive();
+      wasSharing = true;
+      window.acv.livePost({
+        pid: pilotId(), lat: myLast.lat, lon: myLast.lon, alt: Math.round(myLast.alt), gs: Math.round(myLast.gs), hdg: Math.round(myLast.hdg) % 360,
+        pilot: id.pilot, callsign: id.callsign, num: a ? a.num : '', route: a ? a.from + ' → ' + a.to : '',
+        aircraft: a ? a.aircraft : (myLast.title || ''), phase: phaseOf(myLast)
+      }).then((r) => { if (r && r.ok) drawOthers(r.live); }).catch(() => {});
+      return;
+    }
+    if (wasSharing) {  // posé ou simulateur fermé : je disparais de la carte des autres
+      wasSharing = false;
+      window.acv.livePost({ pid: pilotId(), lat: 0, lon: 0, gone: true }).catch(() => {});
+    }
+    if (currentView === 'carte') window.acv.liveList().then((r) => { if (r && r.ok) drawOthers(r.live); }).catch(() => {});
+  }
+  setInterval(liveTick, 20000);
+  setTimeout(liveTick, 3000);
+
   // ---------- Liaison simulateur ----------
   function phaseOf(d) {
     if (d.onGround) {
@@ -310,7 +367,7 @@
   if (window.acv) {
     window.acv.simStatus().then(setSimStatus).catch(() => {});
     window.acv.onSimStatus(setSimStatus);
-    window.acv.onSimData((d) => { showLive(d); updatePlane(d); track(d); updateProgress(d); });
+    window.acv.onSimData((d) => { myLast = d; showLive(d); updatePlane(d); track(d); updateProgress(d); });
     window.acv.version().then((v) => { $('version').textContent = 'v' + v; setTimeout(() => checkNews(v), 1200); }).catch(() => {});
   } else {
     setSimStatus({ connected: false, message: 'Liaison simulateur indisponible' });

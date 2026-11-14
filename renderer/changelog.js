@@ -2,6 +2,16 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.2',
+    date: '14/11/2026',
+    added: [
+      'Carte live : les avions de tous les pilotes en vol apparaissent sur la carte (en turquoise), avec leur nom, leur vol, leur altitude et leur vitesse.',
+      'Compteur des pilotes en vol au-dessus de la carte.'
+    ],
+    fixed: [],
+    removed: []
+  },
+  {
     version: '0.1.1',
     date: '14/11/2026',
     added: [

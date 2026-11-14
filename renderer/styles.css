@@ -243,3 +243,7 @@ details.faq p { margin: 6px 0 0; color: var(--muted); }
 .news-group .tag { margin-bottom: 4px; }
 .news-group ul { margin: 4px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.55; }
 .tag.removed { background: #f1e6e9; color: #6e0d33; }
+
+.other-plane { background: none; border: none; }
+.other-tip { font-size: 13px; line-height: 1.4; }
+.other-tip b { color: #0b6e78; }

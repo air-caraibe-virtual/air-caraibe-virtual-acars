@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('acv', {
   simbriefFetch: (username) => ipcRenderer.invoke('simbrief:fetch', username),
   boardSubmit: (entry) => ipcRenderer.invoke('board:submit', entry),
   boardList: () => ipcRenderer.invoke('board:list'),
+  livePost: (pos) => ipcRenderer.invoke('live:post', pos),
+  liveList: () => ipcRenderer.invoke('live:list'),
   updateGetConfig: () => ipcRenderer.invoke('update:getConfig'),
   updateSetOwner: (owner) => ipcRenderer.invoke('update:setOwner', owner),
   updateCheck: () => ipcRenderer.invoke('update:check'),

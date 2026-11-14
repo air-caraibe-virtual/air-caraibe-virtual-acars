@@ -65,6 +65,8 @@ sim.on('data', (d) => send('sim:data', d));
 ipcMain.handle('app:version', () => app.getVersion());
 ipcMain.handle('board:submit', (_e, entry) => board.submit(entry));
 ipcMain.handle('board:list', () => board.list());
+ipcMain.handle('live:post', (_e, pos) => board.livePost(pos));
+ipcMain.handle('live:list', () => board.liveList());
 ipcMain.handle('simbrief:fetch', async (_e, username) => {
   username = String(username || '').trim();
   if (!/^[A-Za-z0-9_.-]{2,40}$/.test(username)) return { ok: false, message: 'Identifiant SimBrief invalide' };
