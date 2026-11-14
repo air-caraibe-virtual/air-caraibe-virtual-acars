@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const { SimLink } = require('./sim');
 const updater = require('./updater');
+const board = require('./board');
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
@@ -62,6 +63,8 @@ sim.on('status', (s) => send('sim:status', s));
 sim.on('data', (d) => send('sim:data', d));
 
 ipcMain.handle('app:version', () => app.getVersion());
+ipcMain.handle('board:submit', (_e, entry) => board.submit(entry));
+ipcMain.handle('board:list', () => board.list());
 ipcMain.handle('simbrief:fetch', async (_e, username) => {
   username = String(username || '').trim();
   if (!/^[A-Za-z0-9_.-]{2,40}$/.test(username)) return { ok: false, message: 'Identifiant SimBrief invalide' };

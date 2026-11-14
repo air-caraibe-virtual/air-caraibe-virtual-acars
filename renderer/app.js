@@ -121,6 +121,7 @@
     if (name === 'carte' && map) setTimeout(() => map.invalidateSize(), 50);
     if (name === 'mesvols') renderBookings();
     if (name === 'pireps') renderPireps();
+    if (name === 'classement') renderBoard();
   }
 
   // ---------- Carte (plan / satellite) ----------
@@ -179,16 +180,97 @@
     }
     if ($('followPlane').checked) map.panTo(ll, { animate: true });
   }
+  // ---------- Route et TOD (point de début de descente) ----------
+  // Altitude de croisière par défaut quand il n'y a pas de plan SimBrief
+  const DEFAULT_CRUISE = { 'DHC-6 Twin Otter': 8000, 'ATR 72-600': 17000, 'Airbus A320neo': 36000, 'Airbus A350-900': 38000 };
+  let todMarker = null;
+  let todKey = '';
+
+  function routePath(flight) {
+    if (flight.ofp && flight.ofp.fixes && flight.ofp.fixes.length > 1) return flight.ofp.fixes.map((f) => [f.lat, f.lon]);
+    const a = AIRPORTS[flight.from], b = AIRPORTS[flight.to];
+    return [[a[1], a[2]], [b[1], b[2]]];
+  }
+  function cruiseFeet(flight) {
+    const fl = flight.ofp && /FL(\d+)/.exec(flight.ofp.cruise || '');
+    if (fl) return Number(fl[1]) * 100;
+    if (flight.state === 'airborne' && flight.maxAlt > 3000) return flight.maxAlt;
+    return DEFAULT_CRUISE[flight.aircraft] || 30000;
+  }
+  // Distance du TOD avant l'arrivée : règle des 3 NM par tranche de 1 000 ft à perdre
+  function todDistance(flight) { return Math.round(cruiseFeet(flight) / 1000 * 3); }
+  // Position du TOD : celui du plan SimBrief s'il existe, sinon calculé sur la route en partant de l'arrivée
+  function todPoint(flight) {
+    const ofpTod = flight.ofp && flight.ofp.fixes && flight.ofp.fixes.find((f) => f.id === 'TOD');
+    if (ofpTod) return { lat: ofpTod.lat, lon: ofpTod.lon, fromPlan: true };
+    const path = routePath(flight);
+    let left = todDistance(flight);
+    for (let i = path.length - 1; i > 0; i--) {
+      const [la2, lo2] = path[i], [la1, lo1] = path[i - 1];
+      const seg = distanceNm(la1, lo1, la2, lo2);
+      if (seg >= left) {
+        const t = seg ? left / seg : 0;
+        return { lat: la2 + (la1 - la2) * t, lon: lo2 + (lo1 - lo2) * t, fromPlan: false };
+      }
+      left -= seg;
+    }
+    return { lat: path[0][0], lon: path[0][1], fromPlan: false };
+  }
+  function drawTod(flight) {
+    if (!map) return;
+    const key = flight ? flight.id + '|' + cruiseFeet(flight) + '|' + (flight.ofp ? flight.ofp.route : '') : '';
+    if (key === todKey) return;
+    todKey = key;
+    if (todMarker) { map.removeLayer(todMarker); todMarker = null; }
+    if (!flight) return;
+    const p = todPoint(flight);
+    todMarker = L.marker([p.lat, p.lon], {
+      icon: L.divIcon({ className: 'tod-icon', html: '<span>TOD</span>', iconSize: [46, 24], iconAnchor: [23, 12] }),
+      zIndexOffset: 500
+    }).addTo(map).bindTooltip('Début de descente' + (p.fromPlan ? ' (plan SimBrief)' : ' · environ ' + todDistance(flight) + ' NM avant ' + flight.to), { direction: 'top', offset: [0, -10] });
+  }
   function drawRoute(flight) {
     if (!map) return;
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+    todKey = '';
+    drawTod(flight);
     if (!flight) return;
-    if (flight.ofp && flight.ofp.fixes && flight.ofp.fixes.length > 1) {
-      routeLine = L.polyline(flight.ofp.fixes.map((f) => [f.lat, f.lon]), { color: '#2b1a22', weight: 2.5, dashArray: '6 6' }).addTo(map);
-      return;
-    }
-    const a = AIRPORTS[flight.from], b = AIRPORTS[flight.to];
-    routeLine = L.polyline([[a[1], a[2]], [b[1], b[2]]], { color: '#2b1a22', weight: 2, dashArray: '8 8' }).addTo(map);
+    const ofp = flight.ofp && flight.ofp.fixes && flight.ofp.fixes.length > 1;
+    routeLine = L.polyline(routePath(flight), { color: '#2b1a22', weight: ofp ? 2.5 : 2, dashArray: ofp ? '6 6' : '8 8' }).addTo(map);
+  }
+
+  // ---------- Où j'en suis dans mon vol ----------
+  function routeLength(path) {
+    let t = 0;
+    for (let i = 1; i < path.length; i++) t += distanceNm(path[i - 1][0], path[i - 1][1], path[i][0], path[i][1]);
+    return t;
+  }
+  function updateProgress(d) {
+    const a = getActive();
+    const box = $('progressBox');
+    if (!a || !box) return;
+    const arr = AIRPORTS[a.to];
+    const total = Math.max(1, routeLength(routePath(a)));
+    const remaining = distanceNm(d.lat, d.lon, arr[1], arr[2]);
+    const pct = Math.max(0, Math.min(100, Math.round((1 - remaining / total) * 100)));
+    const tod = todPoint(a);
+    const toTod = distanceNm(d.lat, d.lon, tod.lat, tod.lon);
+    const pastTod = remaining <= todDistance(a) + 2 || (tod.fromPlan && remaining < distanceNm(tod.lat, tod.lon, arr[1], arr[2]));
+    const gs = Math.max(d.gs, 1);
+    const eta = new Date(Date.now() + remaining / gs * 3600000);
+    let todText;
+    if (d.onGround && a.state !== 'airborne') todText = 'Au sol';
+    else if (pastTod) todText = 'TOD passé, en descente';
+    else todText = Math.round(toTod) + ' NM · ' + fmtDur(Math.round(toTod / gs * 60));
+    box.innerHTML =
+      '<div class="prog-bar" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"><div style="width:' + pct + '%"></div></div>' +
+      '<div class="prog-grid">' +
+      '<div><span>Avancement</span><b>' + pct + ' %</b></div>' +
+      '<div><span>Reste</span><b>' + Math.round(remaining) + ' NM</b></div>' +
+      '<div><span>TOD dans</span><b>' + todText + '</b></div>' +
+      '<div><span>Arrivée estimée</span><b>' + (d.gs > 40 ? pad2(eta.getHours()) + ':' + pad2(eta.getMinutes()) : '—') + '</b></div>' +
+      '</div>';
+    drawTod(a);
   }
 
   // ---------- Liaison simulateur ----------
@@ -219,7 +301,7 @@
   if (window.acv) {
     window.acv.simStatus().then(setSimStatus).catch(() => {});
     window.acv.onSimStatus(setSimStatus);
-    window.acv.onSimData((d) => { showLive(d); updatePlane(d); track(d); });
+    window.acv.onSimData((d) => { showLive(d); updatePlane(d); track(d); updateProgress(d); });
     window.acv.version().then((v) => { $('version').textContent = 'v' + v; }).catch(() => {});
   } else {
     setSimStatus({ connected: false, message: 'Liaison simulateur indisponible' });
@@ -260,6 +342,7 @@
         const list = store.get('pireps', []);
         list.unshift(pirep);
         store.set('pireps', list);
+        submitLanding(pirep);
         store.set('bookings', store.get('bookings', []).filter((b) => b.id !== a.id));
         setActive(null);
         toast('Atterrissage ' + pirep.landingRate + ' ft/min — PIREP ' + pirep.num + ' enregistré (' + pirep.status + ')');
@@ -310,6 +393,7 @@
       '<div class="row"><b style="color:#8f1238">' + esc(a.num) + '</b><span class="tag live">' + stateLabel + '</span></div>' +
       '<div style="font-family:var(--serif);font-size:30px;font-weight:700;margin:6px 0">' + esc(a.from) + ' → ' + esc(a.to) + '</div>' +
       '<div class="muted small">' + esc(AIRPORTS[a.from][0]) + ' → ' + esc(AIRPORTS[a.to][0]) + ' · ' + esc(a.aircraft) + '</div>' +
+      '<div id="progressBox" class="progress-box"><div class="muted small">L\'avancement s\'affiche dès que MSFS est connecté. Le TOD (début de descente) est marqué sur la carte.</div></div>' +
       ofpHtml(a) +
       '<div class="actions"><button class="btn primary small" id="btnOfp">Importer mon plan SimBrief</button>' +
       '<button class="btn outline small" id="btnSbOpen">Ouvrir dans SimBrief</button>' +
@@ -452,6 +536,56 @@
         '<td><span class="tag ' + (p.status === 'Accepté' ? 'ok' : 'warn') + '">' + esc(p.status) + '</span></td></tr>'
       ).join('') + '</tbody></table></div>';
   }
+
+  // ---------- Classement des atterrissages (partagé entre pilotes) ----------
+  function pilotIdentity() {
+    const p = store.get('profile', {});
+    return { pilot: (p.name || '').trim() || 'Pilote', callsign: (p.callsign || '').trim() };
+  }
+  function submitLanding(pirep) {
+    if (!window.acv || !window.acv.boardSubmit || pirep.status !== 'Accepté') return;
+    const id = pilotIdentity();
+    window.acv.boardSubmit({
+      id: pirep.id, pilot: id.pilot, callsign: id.callsign, num: pirep.num,
+      route: pirep.from + ' → ' + pirep.to, aircraft: pirep.aircraft, rate: pirep.landingRate, status: pirep.status
+    }).then((r) => { if (r && r.ok) toast('Ton atterrissage est dans le classement de la compagnie'); }).catch(() => {});
+  }
+  function localBoard() {
+    const id = pilotIdentity();
+    return store.get('pireps', []).filter((p) => p.status === 'Accepté').map((p) => ({
+      pilot: id.pilot, callsign: id.callsign, num: p.num, route: p.from + ' → ' + p.to, aircraft: p.aircraft, rate: p.landingRate, date: p.date
+    }));
+  }
+  function drawBoard(list, note) {
+    list = list.filter((r) => isFinite(r.rate)).sort((a, b) => Math.abs(a.rate) - Math.abs(b.rate)).slice(0, 50);
+    const me = pilotIdentity();
+    const isMe = (r) => r.pilot === me.pilot && (r.callsign || '') === me.callsign;
+    $('boardNote').textContent = note || '';
+    if (!list.length) {
+      $('podium').innerHTML = '';
+      $('board').innerHTML = '<div class="empty">Pas encore d\'atterrissage classé. Démarre un vol dans « Mes vols » : ton poser sera noté à l\'arrivée.</div>';
+      return;
+    }
+    $('podium').innerHTML = list.slice(0, 3).map((r, i) =>
+      '<div class="pod r' + (i + 1) + '"><div class="rank">' + (i + 1) + '</div>' +
+      '<div class="who">' + esc(r.pilot) + (r.callsign ? ' · ' + esc(r.callsign) : '') + '</div>' +
+      '<div class="rate">' + Math.round(r.rate) + ' ft/min</div>' +
+      '<div class="meta">' + esc(r.num) + ' · ' + esc(r.route) + ' · ' + esc(r.aircraft) + '</div></div>').join('');
+    $('board').innerHTML = '<div class="table-wrap"><table><thead><tr><th>RANG</th><th>PILOTE</th><th>VOL</th><th>ROUTE</th><th>AVION</th><th>TAUX</th><th>DATE</th></tr></thead><tbody>' +
+      list.map((r, i) => '<tr' + (isMe(r) ? ' class="me"' : '') + '><td class="num">' + (i + 1) + '</td><td><b>' + esc(r.pilot) + '</b>' +
+        (r.callsign ? '<div class="muted small">' + esc(r.callsign) + '</div>' : '') + '</td><td>' + esc(r.num) + '</td><td>' + esc(r.route) +
+        '</td><td>' + esc(r.aircraft) + '</td><td class="num">' + Math.round(r.rate) + ' ft/min</td><td>' + esc(r.date || '') + '</td></tr>').join('') +
+      '</tbody></table></div>';
+  }
+  function renderBoard() {
+    if (!window.acv || !window.acv.boardList) { drawBoard(localBoard(), 'Classement partagé indisponible : seuls tes atterrissages sont affichés.'); return; }
+    $('boardNote').textContent = 'Chargement du classement…';
+    window.acv.boardList().then((r) => {
+      if (r && r.ok && Array.isArray(r.list)) drawBoard(r.list, 'Classement de toute la compagnie, du poser le plus doux au plus ferme.');
+      else drawBoard(localBoard(), (r && r.message ? r.message + ' : ' : '') + 'seuls tes atterrissages sont affichés.');
+    }).catch(() => drawBoard(localBoard(), 'Classement injoignable : seuls tes atterrissages sont affichés.'));
+  }
+  $('btnBoardRefresh').addEventListener('click', renderBoard);
 
   // ---------- Profil, accueil et voix ----------
   function welcomeScript(name) {

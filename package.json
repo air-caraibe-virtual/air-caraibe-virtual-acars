@@ -30,7 +30,8 @@
       "sim.js",
       "renderer/**/*",
       "package.json",
-      "updater.js"
+      "updater.js",
+      "board.js"
     ],
     "win": {
       "target": [

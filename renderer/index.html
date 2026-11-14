@@ -24,6 +24,7 @@
     <button class="nav-btn" data-view="vols">Vols aléatoires</button>
     <button class="nav-btn" data-view="mesvols">Mes vols</button>
     <button class="nav-btn" data-view="pireps">PIREPs</button>
+    <button class="nav-btn" data-view="classement">Classement</button>
     <button class="nav-btn" data-view="profil">Profil</button>
   </nav>
   <div id="simPill" class="sim-pill off" role="status" aria-live="polite"><span class="dot"></span><span id="simText">Recherche du simulateur…</span></div>
@@ -119,6 +120,22 @@
     <div class="card">
       <div class="card-head"><h1>Mes PIREPs</h1><span class="muted small">Rapports de vol enregistrés automatiquement</span></div>
       <div id="pireps"></div>
+    </div>
+  </section>
+
+  <!-- CLASSEMENT -->
+  <section id="view-classement" class="view">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h1>Classement des atterrissages</h1>
+          <p class="muted small" style="margin:4px 0 0">Les posers les plus doux de la compagnie. Seuls les vols arrivés à destination comptent.</p>
+        </div>
+        <button id="btnBoardRefresh" class="btn outline small">Actualiser</button>
+      </div>
+      <div id="podium" class="podium"></div>
+      <div id="board"></div>
+      <p id="boardNote" class="muted small" style="margin-bottom:0"></p>
     </div>
   </section>
 

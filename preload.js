@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('acv', {
   onSimData: (cb) => ipcRenderer.on('sim:data', (_e, d) => cb(d)),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   simbriefFetch: (username) => ipcRenderer.invoke('simbrief:fetch', username),
+  boardSubmit: (entry) => ipcRenderer.invoke('board:submit', entry),
+  boardList: () => ipcRenderer.invoke('board:list'),
   updateGetConfig: () => ipcRenderer.invoke('update:getConfig'),
   updateSetOwner: (owner) => ipcRenderer.invoke('update:setOwner', owner),
   updateCheck: () => ipcRenderer.invoke('update:check'),
