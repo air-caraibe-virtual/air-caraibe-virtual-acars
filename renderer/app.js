@@ -311,7 +311,7 @@
     window.acv.simStatus().then(setSimStatus).catch(() => {});
     window.acv.onSimStatus(setSimStatus);
     window.acv.onSimData((d) => { showLive(d); updatePlane(d); track(d); updateProgress(d); });
-    window.acv.version().then((v) => { $('version').textContent = 'v' + v; }).catch(() => {});
+    window.acv.version().then((v) => { $('version').textContent = 'v' + v; setTimeout(() => checkNews(v), 1200); }).catch(() => {});
   } else {
     setSimStatus({ connected: false, message: 'Liaison simulateur indisponible' });
   }
@@ -802,6 +802,38 @@
   // Première utilisation : Ti-Pilote se présente après l'accueil
   if (!store.get('helperSeen', false)) $('helperDot').classList.remove('hidden');
   $('btnStart').addEventListener('click', () => { if (!store.get('helperSeen', false)) setTimeout(() => helperOpen('steps'), 800); });
+
+  // ---------- Quoi de neuf ? (après chaque mise à jour) ----------
+  function cmpVersion(a, b) {
+    const x = String(a).split(/[.-]/).map((n) => parseInt(n, 10) || 0), y = String(b).split(/[.-]/).map((n) => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); }
+    return 0;
+  }
+  function newsHtml(entries) {
+    const group = (items, cls, label) => items && items.length
+      ? '<div class="news-group"><span class="tag ' + cls + '">' + label + '</span><ul>' + items.map((t) => '<li>' + esc(t) + '</li>').join('') + '</ul></div>' : '';
+    return entries.map((e) => '<div class="news-version"><h3>Version ' + esc(e.version) + ' <span>' + esc(e.date || '') + '</span></h3>' +
+      group(e.added, 'ok', 'Ajouté') + group(e.fixed, 'info', 'Corrigé') + group(e.removed, 'removed', 'Retiré') + '</div>').join('');
+  }
+  function showNews(entries, sub) {
+    if (!entries.length) return;
+    $('newsSub').textContent = sub;
+    $('newsBody').innerHTML = newsHtml(entries);
+    $('news').classList.remove('hidden');
+    $('newsClose').focus();
+  }
+  $('newsClose').addEventListener('click', () => $('news').classList.add('hidden'));
+  $('btnNews').addEventListener('click', () => showNews(window.ACV_CHANGELOG || [], 'Toutes les nouveautés de l\'ACARS'));
+  function checkNews(version) {
+    const log = window.ACV_CHANGELOG || [];
+    const seen = store.get('lastSeenVersion', null);
+    store.set('lastSeenVersion', version);
+    // Nouvelle installation : l'accueil suffit, pas de « Quoi de neuf ? »
+    if (!seen || !store.get('profile', null)) return;
+    if (cmpVersion(version, seen) <= 0) return;
+    const fresh = log.filter((e) => cmpVersion(e.version, seen) > 0 && cmpVersion(e.version, version) <= 0);
+    showNews(fresh, 'Ton ACARS vient de passer en version ' + version + '. Voici ce qui a changé :');
+  }
 
   // ---------- Démarrage ----------
   initMap();

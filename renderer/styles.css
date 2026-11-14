@@ -227,3 +227,19 @@ details.faq p { margin: 6px 0 0; color: var(--muted); }
 .speech .voice-on { margin-top: 12px; color: var(--flower-dark); font-size: 14px; }
 .speech .eq i { background: var(--flower); }
 @media (max-width: 700px) { .speech::before { display: none; } }
+
+/* Fenêtre « Quoi de neuf ? » */
+.news-overlay { position: fixed; inset: 0; z-index: 40; background: rgba(30,10,20,0.55); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.news-overlay.hidden { display: none; }
+.news-box { width: min(620px, 100%); max-height: 86vh; overflow-y: auto; background: #fff; border-radius: 20px; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); border-top: 6px solid var(--flower); display: flex; flex-direction: column; gap: 14px; }
+.news-head { display: flex; align-items: center; gap: 14px; }
+.news-mascot svg { border-radius: 99px; background: #fdf0f3; border: 3px solid #fff; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+.news-head h2 { margin: 0; font-size: 24px; }
+.news-version { border-top: 1px solid var(--line); padding-top: 12px; }
+.news-version:first-child { border-top: none; padding-top: 0; }
+.news-version h3 { margin: 0 0 8px; font-size: 16px; display: flex; gap: 8px; align-items: baseline; }
+.news-version h3 span { font-weight: 400; color: var(--muted); font-size: 13px; }
+.news-group { margin: 6px 0; }
+.news-group .tag { margin-bottom: 4px; }
+.news-group ul { margin: 4px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.55; }
+.tag.removed { background: #f1e6e9; color: #6e0d33; }
