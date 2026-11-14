@@ -83,7 +83,8 @@ ipcMain.handle('simbrief:fetch', async (_e, username) => {
   username = String(username || '').trim();
   if (!/^[A-Za-z0-9_.-]{2,40}$/.test(username)) return { ok: false, message: 'Identifiant SimBrief invalide' };
   try {
-    const res = await fetch('https://www.simbrief.com/api/xml.fetcher.php?username=' + encodeURIComponent(username) + '&json=1');
+    const param = /^\d+$/.test(username) ? 'userid=' : 'username=';
+    const res = await fetch('https://www.simbrief.com/api/xml.fetcher.php?' + param + encodeURIComponent(username) + '&json=1');
     const d = await res.json();
     if (!d || !d.origin || !d.destination) {
       const why = d && d.fetch && d.fetch.status ? String(d.fetch.status) : 'aucun plan trouvé';

@@ -5,7 +5,8 @@ window.ACV_CHANGELOG = [
     version: '0.1.2',
     date: '14/11/2026',
     added: [
-      'Profil vertical en vol, sous la carte live : ton altitude selon la distance parcourue, colorée par phase (montée, croisière, descente, approche), avec le TOD et ta position actuelle.'
+      'Profil vertical en vol, sous la carte live : ton altitude selon la distance parcourue, colorée par phase (montée, croisière, descente, approche), avec le TOD et ta position actuelle.',
+      'Nouvel onglet « Paramètres » : ton identifiant SimBrief (nom d\'utilisateur ou Pilot ID), avec un bouton pour tester qu\'il marche. Les nouveautés et les mises à jour y sont aussi.'
     ],
     fixed: [],
     removed: []

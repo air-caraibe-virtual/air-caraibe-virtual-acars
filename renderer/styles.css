@@ -275,3 +275,9 @@ details.faq p { margin: 6px 0 0; color: var(--muted); }
 .lg.climb { background: #1f9d63; } .lg.cruise { background: #3b6fd8; } .lg.desc { background: #e8890c; } .lg.final { background: #d6204f; }
 #profileChart svg { display: block; width: 100%; height: auto; }
 #profileChart .ax { font: 11px "Segoe UI", system-ui, sans-serif; fill: #5b4650; }
+
+.setting { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 14px; }
+.setting h2 { margin-bottom: 4px; }
+.setting .field { max-width: 420px; }
+.status-ok { color: var(--green); font-weight: 700; }
+.status-err { color: #a11b1b; font-weight: 700; }

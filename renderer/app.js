@@ -596,7 +596,7 @@
   }
   function importOfp() {
     const user = (store.get('profile', {}).simbrief || '').trim();
-    if (!user) { toast('Ajoute ton identifiant SimBrief dans « Profil » d\'abord'); showView('profil'); return; }
+    if (!user) { toast('Ajoute ton identifiant SimBrief dans « Paramètres » d\'abord'); showView('parametres'); return; }
     if (!window.acv || !window.acv.simbriefFetch) { toast('Import SimBrief indisponible'); return; }
     toast('Import du plan SimBrief…');
     window.acv.simbriefFetch(user).then((r) => {
@@ -930,11 +930,31 @@
     const p = store.get('profile', {});
     $('profName').value = p.name || '';
     $('profCallsign').value = p.callsign || '';
-    $('profSimbrief').value = p.simbrief || '';
+    $('setSimbrief').value = p.simbrief || '';
   }
   $('btnSaveProfile').addEventListener('click', () => {
-    store.set('profile', { name: $('profName').value.trim(), callsign: $('profCallsign').value.trim(), simbrief: $('profSimbrief').value.trim() });
+    store.set('profile', Object.assign({}, store.get('profile', {}), { name: $('profName').value.trim(), callsign: $('profCallsign').value.trim() }));
     toast('Profil enregistré');
+  });
+
+  // ---------- Paramètres : identifiant SimBrief ----------
+  function sbStatus(text, cls) { $('simbriefStatus').className = 'small ' + (cls || 'muted'); $('simbriefStatus').textContent = text; }
+  $('btnSetSimbrief').addEventListener('click', () => {
+    const v = $('setSimbrief').value.trim();
+    if (v && !/^[A-Za-z0-9_.-]{2,40}$/.test(v)) { sbStatus('Identifiant invalide : lettres, chiffres, point, tiret ou souligné seulement.', 'status-err'); return; }
+    store.set('profile', Object.assign({}, store.get('profile', {}), { simbrief: v }));
+    sbStatus(v ? 'Identifiant SimBrief enregistré.' : 'Identifiant SimBrief retiré.', 'status-ok');
+    toast(v ? 'Identifiant SimBrief enregistré' : 'Identifiant SimBrief retiré');
+  });
+  $('btnTestSimbrief').addEventListener('click', () => {
+    const v = $('setSimbrief').value.trim();
+    if (!v) { sbStatus('Entre d\'abord ton identifiant SimBrief.', 'status-err'); return; }
+    if (!window.acv || !window.acv.simbriefFetch) { sbStatus('Test indisponible.', 'status-err'); return; }
+    sbStatus('Recherche de ton dernier plan SimBrief…');
+    window.acv.simbriefFetch(v).then((r) => {
+      if (r && r.ok) sbStatus('Ça marche ! Dernier plan trouvé : ' + r.ofp.from + ' → ' + r.ofp.to + (r.ofp.flight ? ' (' + r.ofp.flight + ')' : '') + (r.ofp.cruise ? ', croisière ' + r.ofp.cruise : '') + '.', 'status-ok');
+      else sbStatus((r && r.message) || 'Aucun plan trouvé pour cet identifiant.', 'status-err');
+    }).catch(() => sbStatus('Impossible de joindre SimBrief.', 'status-err'));
   });
 
   document.querySelectorAll('.js-discord').forEach((b) => b.addEventListener('click', () => {
@@ -966,7 +986,8 @@
     mesvols: { title: 'Mes vols réservés', html: '<ol><li>« SimBrief » prépare ton plan de vol déjà rempli.</li><li>« Démarrer » lance le suivi : l\'ACARS attend ton décollage.</li><li>Pose-toi à destination : ton PIREP s\'enregistre tout seul.</li></ol>', go: ['vols', 'Réserver un vol'] },
     pireps: { title: 'Mes PIREPs', html: '<p>Chaque vol terminé devient un PIREP : temps de vol, altitude maximale et taux d\'atterrissage.</p><p>« Accepté » veut dire que tu t\'es posé à moins de 15 NM de l\'aéroport prévu.</p>', go: ['classement', 'Voir le classement'] },
     classement: { title: 'Le classement', html: '<p>Les atterrissages les plus doux de toute la compagnie. Plus le chiffre en ft/min est petit, plus le poser est doux.</p><p>Astuce : vise entre -60 et -200 ft/min pour un poser propre.</p>', go: null },
-    profil: { title: 'Ton profil', html: '<p>Mets ton prénom et ton indicatif : c\'est le nom qui apparaît dans le classement.</p><p>Ajoute ton identifiant SimBrief pour importer tes plans de vol en un clic.</p>', go: null }
+    profil: { title: 'Ton profil', html: '<p>Mets ton prénom et ton indicatif : c\'est le nom qui apparaît dans le classement.</p>', go: ['parametres', 'Ouvrir les paramètres'] },
+    parametres: { title: 'Les paramètres', html: '<p>Ajoute ton identifiant SimBrief (nom d\'utilisateur ou Pilot ID) pour importer tes plans de vol en un clic.</p><p>« Tester avec mon dernier plan » vérifie que tout marche.</p><p>Tu y trouves aussi les nouveautés et les mises à jour.</p>', go: null }
   };
   const HELP_FAQ = [
     ['Le voyant reste orange, MSFS n\'est pas détecté', 'Lance d\'abord MSFS 2024 et attends d\'être dans le cockpit. L\'ACARS réessaie tout seul toutes les 5 secondes. La liaison ne marche que sur PC.'],
