@@ -1,6 +1,6 @@
 {
   "name": "air-caraibe-virtual-acars",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Air Caraïbe Virtual — ACARS bêta",
   "main": "main.js",
   "scripts": {
@@ -57,7 +57,7 @@
         "fr_FR"
       ],
       "language": "1036",
-      "artifactName": "Air-Caraibe-Virtual-Beta-Setup-${version}.exe"
+      "artifactName": "Air-Caraibe-Virtual-Setup.exe"
     },
     "publish": [
       {
