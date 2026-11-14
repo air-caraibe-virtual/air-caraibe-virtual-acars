@@ -5,7 +5,7 @@ const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
 const REPO = 'air-caraibe-virtual-acars';
-const DEFAULT_OWNER = 'tedchalosse';
+const DEFAULT_OWNER = 'air-caraibe-virtual';
 const CHECK_EVERY_MS = 2 * 60 * 60 * 1000; // toutes les 2 heures
 
 let notify = () => {};
