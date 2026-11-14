@@ -100,6 +100,7 @@ ipcMain.handle('board:submit', (_e, entry) => guarded(() => board.submit(entry))
 ipcMain.handle('board:list', () => board.list());
 ipcMain.handle('live:post', (_e, pos) => guarded(() => board.livePost(pos)));
 ipcMain.handle('live:list', () => board.liveList());
+ipcMain.handle('idea:send', (_e, idea) => guarded(() => board.idea({ type: String((idea && idea.type) || ''), text: String((idea && idea.text) || '').slice(0, 1000), version: app.getVersion() })));
 // Radar de pluie (RainViewer, gratuit et sans clé) : dernière image disponible
 ipcMain.handle('wx:radar', async () => {
   try {
@@ -160,6 +161,7 @@ ipcMain.handle('simbrief:fetch', async (_e, username) => {
 ipcMain.handle('update:getConfig', () => updater.getConfig());
 ipcMain.handle('update:setOwner', (_e, owner) => updater.setOwner(owner));
 ipcMain.handle('update:check', () => updater.check());
+ipcMain.handle('update:setBeta', (_e, on) => updater.setBeta(!!on));
 ipcMain.handle('update:install', () => updater.install());
 ipcMain.handle('sim:getStatus', () => sim.status);
 ipcMain.handle('open-external', (_e, url) => {

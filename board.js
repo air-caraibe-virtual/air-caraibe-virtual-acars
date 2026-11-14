@@ -30,6 +30,9 @@ module.exports = {
   livePost: async (pos) => {
     try { return await call('POST', Object.assign({ action: 'pos' }, pos)); } catch (e) { return { ok: false }; }
   },
+  idea: async (idea) => {
+    try { return await call('POST', Object.assign({ action: 'idea' }, idea)); } catch (e) { return { ok: false, message: 'Envoi impossible (connexion ?)' }; }
+  },
   liveList: async () => {
     try { return await call('GET', null, 'live'); } catch (e) { return { ok: false }; }
   }

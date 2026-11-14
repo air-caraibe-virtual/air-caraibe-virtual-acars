@@ -41,6 +41,7 @@
     TBPB: ['Barbade', 13.0746, -59.4925],
     SOCA: ['Cayenne', 4.8198, -52.3604],
     MDPC: ['Punta Cana', 18.5674, -68.3634],
+    MMUN: ['Cancún', 21.0365, -86.8771],
     LFPO: ['Paris-Orly', 48.7233, 2.3794]
   };
   const ROUTES = [
@@ -48,12 +49,14 @@
     ['TFFR','TFFG','iles'],['TFFF','TFFJ','iles'],['TNCM','TFFJ','iles'],['TFFR','TDPD','iles'],
     ['TFFR','TAPA','iles'],['TFFF','TDPD','iles'],
     ['TFFF','TBPB','carib'],['TFFR','SOCA','carib'],['TFFF','SOCA','carib'],['TFFR','MDPC','carib'],['TFFF','MDPC','carib'],
-    ['TFFR','LFPO','transat'],['TFFF','LFPO','transat'],['SOCA','LFPO','transat']
+    ['TFFR','MMUN','carib'],['TFFF','MMUN','carib'],['MDPC','MMUN','carib'],
+    ['TFFR','LFPO','transat','Airbus A350-1000'],['TFFF','LFPO','transat','Airbus A350-1000'],['MDPC','LFPO','transat','Airbus A350-1000'],
+    ['SOCA','LFPO','transat'],['MMUN','LFPO','transat']
   ];
-  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359' };
+  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
   function simbriefUrl(f) {
     const q = new URLSearchParams({
-      airline: 'FWE', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
+      airline: 'FWI', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
       orig: f.from, dest: f.to, deph: (f.dep || '').slice(0, 2), depm: (f.dep || '').slice(3, 5),
       steh: String(Math.floor(f.mins / 60)), stem: String(f.mins % 60)
     });
@@ -72,8 +75,9 @@
   const fmtDur = (mins) => Math.floor(mins / 60) + ' h ' + pad2(Math.round(mins % 60));
 
   // Avion attribué à une ligne : Twin Otter pour Saint-Barth (piste courte), ATR pour les courtes
-  // distances, A320neo pour les Caraïbes, A350 pour la transatlantique.
-  function planeFor(from, to, cat, nm) {
+  // distances, A320neo pour les Caraïbes, A350-900 et A350-1000 pour la transatlantique.
+  function planeFor(from, to, cat, nm, forced) {
+    if (forced) return { aircraft: forced, speed: 485 };
     if (from === 'TFFJ' || to === 'TFFJ') return { aircraft: 'DHC-6 Twin Otter', speed: 150 };
     if (cat === 'transat') return { aircraft: 'Airbus A350-900', speed: 480 };
     if (nm < 350) return { aircraft: 'ATR 72-600', speed: 270 };
@@ -81,11 +85,11 @@
   }
   // Toutes les lignes, dans les deux sens, avec leur avion
   const LEGS = [];
-  ROUTES.forEach(([x, y, c]) => {
+  ROUTES.forEach(([x, y, c, forced]) => {
     [[x, y], [y, x]].forEach(([from, to]) => {
       const a = AIRPORTS[from], b = AIRPORTS[to];
       const nm = Math.round(distanceNm(a[1], a[2], b[1], b[2]));
-      const p = planeFor(from, to, c, nm);
+      const p = planeFor(from, to, c, nm, forced);
       LEGS.push({ from, to, cat: c, nm, aircraft: p.aircraft, mins: Math.round(nm / p.speed * 60 + 20) });
     });
   });
@@ -97,7 +101,7 @@
     d.setMinutes(Math.round(d.getMinutes() / 5) * 5, 0, 0);
     return Object.assign({}, l, {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      num: 'FWE ' + (100 + Math.floor(Math.random() * 900)),
+      num: 'FWI ' + (100 + Math.floor(Math.random() * 900)),
       dep: pad2(d.getHours()) + ':' + pad2(d.getMinutes())
     });
   }
@@ -230,7 +234,7 @@
   }
   // ---------- Route et TOD (point de début de descente) ----------
   // Altitude de croisière par défaut quand il n'y a pas de plan SimBrief
-  const DEFAULT_CRUISE = { 'DHC-6 Twin Otter': 8000, 'ATR 72-600': 17000, 'Airbus A320neo': 36000, 'Airbus A350-900': 38000 };
+  const DEFAULT_CRUISE = { 'DHC-6 Twin Otter': 8000, 'ATR 72-600': 17000, 'Airbus A320neo': 36000, 'Airbus A350-900': 38000, 'Airbus A350-1000': 37000 };
   let todMarker = null;
   let todKey = '';
 
@@ -755,7 +759,7 @@
       const depMin = 6 * 60 + Math.floor(rnd() * 15) * 60 + [0, 15, 30, 45][Math.floor(rnd() * 4)];
       return Object.assign({}, l, {
         daily: day, id: 'daily-' + day + '-' + i,
-        num: 'FWE ' + (100 + Math.floor(rnd() * 900)),
+        num: 'FWI ' + (100 + Math.floor(rnd() * 900)),
         dep: pad2(Math.floor(depMin / 60) % 24) + ':' + pad2(depMin % 60)
       });
     });
@@ -919,7 +923,7 @@
   function openWelcome() {
     const p = store.get('profile', null) || store.get('pendingProfile', {});
     $('wName').value = p.name || '';
-    $('wCallsign').value = p.callsign || 'FWE';
+    $('wCallsign').value = p.callsign || 'FWI';
     refreshWelcome();
     $('welcome').classList.remove('hidden');
     stopVoice();
@@ -996,22 +1000,77 @@
     else window.open(DISCORD_URL, '_blank');
   }));
 
-  // ---------- Mises à jour ----------
+  // ---------- Mises à jour (fenêtre au premier plan) ----------
+  document.querySelectorAll('.js-mascot').forEach((el) => { const m = document.querySelector('#news .news-mascot'); if (m) el.innerHTML = m.innerHTML; });
+  let updDismissed = '';
+  function verLabel(v) { return 'version ' + v + (String(v).includes('-') ? '<span class="tag-beta">BÊTA</span>' : ''); }
   function showUpdate(s) {
     if (!s) return;
     $('updStatus').textContent = s.message;
-    if (s.state === 'ready') {
-      $('updBannerText').textContent = 'La version ' + s.version + ' est prête. Redémarre pour l\'installer.';
-      $('updBanner').classList.remove('hidden');
-    }
+    if (s.state !== 'downloading' && s.state !== 'ready') return;
+    if (!s.version || updDismissed === s.version + s.state) return;
+    const pop = $('updPop'), ready = s.state === 'ready';
+    pop.classList.toggle('ready', ready);
+    $('updPopTitle').textContent = ready ? 'Ta mise à jour est prête !' : 'Une nouvelle version arrive !';
+    $('updPopSub').innerHTML = 'Air Caraïbe Virtual ACARS · ' + verLabel(esc(s.version));
+    $('updPopBar').style.width = (ready ? 100 : Math.max(4, s.percent || 0)) + '%';
+    $('updPopText').textContent = ready
+      ? 'Redémarre l\'ACARS pour l\'installer : ça prend quelques secondes. Tu découvriras ensuite tout ce qui a changé dans « Quoi de neuf ? ».'
+      : 'Téléchargement en cours (' + (s.percent || 0) + ' %). Tu peux continuer à utiliser l\'ACARS pendant ce temps.';
+    $('btnUpdInstall').disabled = !ready;
+    $('btnUpdLater').textContent = ready ? 'Plus tard' : 'Continuer en arrière-plan';
+    pop.classList.remove('hidden');
+  }
+  function betaUi(on) {
+    $('betaToggle').checked = !!on;
+    $('betaStatus').textContent = on ? 'Tu es bêta-testeur : tu recevras les versions bêta en avant-première. Merci !' : 'Tu reçois uniquement les versions officielles.';
   }
   if (window.acv && window.acv.updateGetConfig) {
-    window.acv.updateGetConfig().then((c) => showUpdate(c.status)).catch(() => {});
+    window.acv.updateGetConfig().then((c) => { showUpdate(c.status); betaUi(c.beta); }).catch(() => {});
     window.acv.onUpdateStatus(showUpdate);
     $('btnUpdCheck').addEventListener('click', () => window.acv.updateCheck());
     $('btnUpdInstall').addEventListener('click', () => window.acv.updateInstall());
-    $('btnUpdLater').addEventListener('click', () => $('updBanner').classList.add('hidden'));
+    $('betaToggle').addEventListener('change', (e) => {
+      const on = e.target.checked;
+      betaUi(on);
+      if (window.acv.updateSetBeta) window.acv.updateSetBeta(on).then(() => toast(on ? 'Programme bêta activé' : 'Retour aux versions officielles')).catch(() => {});
+    });
+  } else betaUi(false);
+  $('btnUpdLater').addEventListener('click', () => {
+    const t = $('updPopSub').textContent.match(/version (\S+)/);
+    updDismissed = (t ? t[1].replace('BÊTA', '') : '') + ($('updPop').classList.contains('ready') ? 'ready' : 'downloading');
+    $('updPop').classList.add('hidden');
+  });
+
+  // ---------- Boîte à idées ----------
+  let ideaType = 'Nouvelle fonction';
+  function openIdea() {
+    $('ideaMsg').textContent = ''; $('ideaMsg').className = 'lock-msg';
+    $('ideaPop').classList.remove('hidden');
+    setTimeout(() => $('ideaText').focus(), 50);
   }
+  $('btnIdea').addEventListener('click', openIdea);
+  document.querySelectorAll('.idea-types .pill').forEach((b) => b.addEventListener('click', () => {
+    ideaType = b.dataset.type;
+    document.querySelectorAll('.idea-types .pill').forEach((x) => { x.classList.toggle('active', x === b); x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+  }));
+  $('ideaText').addEventListener('input', () => { $('ideaCount').textContent = $('ideaText').value.length + ' / 1000'; });
+  $('ideaCancel').addEventListener('click', () => $('ideaPop').classList.add('hidden'));
+  $('ideaSend').addEventListener('click', () => {
+    const text = $('ideaText').value.trim();
+    if (text.length < 5) { $('ideaMsg').textContent = 'Écris ton idée en quelques mots.'; return; }
+    if (!window.acv || !window.acv.ideaSend) { $('ideaMsg').textContent = 'Envoi possible uniquement dans le logiciel installé.'; return; }
+    $('ideaSend').disabled = true; $('ideaMsg').className = 'lock-msg'; $('ideaMsg').textContent = 'Envoi…';
+    window.acv.ideaSend({ type: ideaType, text }).then((r) => {
+      if (r && r.ok) {
+        $('ideaText').value = ''; $('ideaCount').textContent = '0 / 1000';
+        $('ideaPop').classList.add('hidden');
+        toast('Merci ! Ton idée est bien arrivée à la compagnie');
+      } else { $('ideaMsg').textContent = (r && r.message) || 'Envoi impossible pour le moment.'; }
+    }).catch(() => { $('ideaMsg').textContent = 'Envoi impossible (connexion ?)'; })
+      .finally(() => { $('ideaSend').disabled = false; });
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('ideaPop').classList.add('hidden'); } });
 
   // ---------- Ti-Pilote, le petit assistant ----------
   const HELP_PAGES = {
@@ -1021,14 +1080,16 @@
     pireps: { title: 'Mes PIREPs', html: '<p>Chaque vol terminé devient un PIREP : temps de vol, altitude maximale et taux d\'atterrissage.</p><p>« Accepté » veut dire que tu t\'es posé à moins de 15 NM de l\'aéroport prévu.</p>', go: ['classement', 'Voir le classement'] },
     classement: { title: 'Le classement', html: '<p>Les atterrissages les plus doux de toute la compagnie. Plus le chiffre en ft/min est petit, plus le poser est doux.</p><p>Astuce : vise entre -60 et -200 ft/min pour un poser propre.</p>', go: null },
     profil: { title: 'Ton profil', html: '<p>Mets ton prénom et ton indicatif : c\'est le nom qui apparaît dans le classement.</p>', go: ['parametres', 'Ouvrir les paramètres'] },
-    parametres: { title: 'Les paramètres', html: '<p>Ajoute ton identifiant SimBrief (nom d\'utilisateur ou Pilot ID) pour importer tes plans de vol en un clic.</p><p>« Tester avec mon dernier plan » vérifie que tout marche.</p><p>Tu y trouves aussi les nouveautés et les mises à jour.</p>', go: null }
+    parametres: { title: 'Les paramètres', html: '<p>Ajoute ton identifiant SimBrief (nom d\'utilisateur ou Pilot ID) pour importer tes plans de vol en un clic.</p><p>« Tester avec mon dernier plan » vérifie que tout marche.</p><p>Tu y trouves aussi les nouveautés, les mises à jour et le mode <b>bêta-testeur</b> pour recevoir les nouveautés en avant-première.</p>', go: null }
   };
   const HELP_FAQ = [
     ['Le voyant reste orange, MSFS n\'est pas détecté', 'Lance d\'abord MSFS 2024 et attends d\'être dans le cockpit. L\'ACARS réessaie tout seul toutes les 5 secondes. La liaison ne marche que sur PC.'],
     ['Mon PIREP dit « Hors destination »', 'Tu t\'es posé à plus de 15 NM de l\'aéroport du vol démarré. Vérifie d\'avoir démarré le bon vol dans « Mes vols ».'],
     ['L\'import SimBrief ne marche pas', 'Mets ton identifiant SimBrief dans « Profil », génère ton plan sur SimBrief, puis clique sur « Importer mon plan SimBrief ».'],
     ['C\'est quoi le TOD ?', 'Top Of Descent : le point où tu commences ta descente. En général 3 NM par tranche de 1 000 ft à perdre.'],
-    ['Comment rejoindre les autres pilotes ?', 'Sur notre serveur Discord : bouton dans l\'onglet « Profil ».']
+    ['Comment rejoindre les autres pilotes ?', 'Sur notre serveur Discord : bouton dans l\'onglet « Profil ».'],
+    ['J\'ai une idée pour améliorer l\'ACARS', 'Clique sur le bouton jaune « Une idée ? » en haut : ton idée arrive directement à la compagnie.'],
+    ['C\'est quoi le mode bêta-testeur ?', 'Dans « Paramètres », active « Recevoir les versions bêta » pour tester les nouveautés avant leur sortie officielle.']
   ];
   let helpMode = 'page';
   function helpSteps() {

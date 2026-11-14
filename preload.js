@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('acv', {
   updateGetConfig: () => ipcRenderer.invoke('update:getConfig'),
   updateSetOwner: (owner) => ipcRenderer.invoke('update:setOwner', owner),
   updateCheck: () => ipcRenderer.invoke('update:check'),
+  updateSetBeta: (on) => ipcRenderer.invoke('update:setBeta', on),
+  ideaSend: (idea) => ipcRenderer.invoke('idea:send', idea),
   updateInstall: () => ipcRenderer.invoke('update:install'),
   onUpdateStatus: (cb) => ipcRenderer.on('update:status', (_e, s) => cb(s))
 });

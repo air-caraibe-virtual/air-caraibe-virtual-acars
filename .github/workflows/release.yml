@@ -22,6 +22,10 @@ jobs:
           node-version: 22
       - name: Installer les dépendances
         run: npm ci
+      - name: Version bêta ? (ex. 0.2.0-beta.1) publiée en pré-version, seulement pour les bêta-testeurs
+        shell: bash
+        run: |
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));if(p.version.includes('-')){p.build.publish[0].releaseType='prerelease';fs.writeFileSync('package.json',JSON.stringify(p,null,2));console.log('Pré-version bêta',p.version)}else console.log('Version officielle',p.version)"
       - name: Fabriquer et publier l'installateur
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

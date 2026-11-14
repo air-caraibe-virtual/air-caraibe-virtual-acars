@@ -2,6 +2,17 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.7',
+    date: '15 novembre 2026',
+    added: ["Nouvelle destination : Cancún (MMUN), depuis Pointe-à-Pitre, Fort-de-France, Punta Cana et Paris-Orly.",
+      "Nouvel avion : Airbus A350-1000, sur Paris-Orly ↔ Pointe-à-Pitre, Fort-de-France et Punta Cana.",
+      "Fenêtre de mise à jour au premier plan, avec l'avancement du téléchargement.",
+      "Mode bêta-testeur dans « Paramètres » : reçois les nouveautés avant leur sortie officielle.",
+      "Bouton jaune « Une idée ? » en haut de l'écran pour proposer tes idées à la compagnie."],
+    fixed: ["Le code compagnie devient FWI : les numéros de vol passent en FWI (par exemple FWI 824), y compris dans SimBrief."],
+    removed: ["L'ancien bandeau de mise à jour en bas de l'écran, remplacé par la nouvelle fenêtre.", "L'ancien code FWE n'est plus utilisé."]
+  },
+  {
     version: '0.1.6',
     date: '14 novembre 2026',
     added: ["Accès pilote : l'ACARS demande maintenant ton code d'accès personnel, à recevoir sur Discord. Tu ne le tapes qu'une seule fois.",

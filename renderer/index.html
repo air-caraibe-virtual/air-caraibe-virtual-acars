@@ -28,7 +28,13 @@
     <button class="nav-btn" data-view="profil">Profil</button>
     <button class="nav-btn" data-view="parametres">Paramètres</button>
   </nav>
+  <div class="top-right">
+  <button id="btnIdea" class="idea-btn" title="Proposer une idée pour améliorer l'ACARS">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Une idée ?
+  </button>
   <div id="simPill" class="sim-pill off" role="status" aria-live="polite"><span class="dot"></span><span id="simText">Recherche du simulateur…</span></div>
+  </div>
 </header>
 
 <main>
@@ -118,6 +124,7 @@
               <option value="ATR 72-600">ATR 72-600</option>
               <option value="Airbus A320neo">Airbus A320neo</option>
               <option value="Airbus A350-900">Airbus A350-900</option>
+              <option value="Airbus A350-1000">Airbus A350-1000</option>
             </select>
           </label>
         </div>
@@ -179,7 +186,7 @@
       <div class="card wide">
         <h1>Mon profil pilote</h1>
         <label class="field">Prénom<input id="profName" type="text" placeholder="Ex. : Marc"></label>
-        <label class="field">Indicatif pilote<input id="profCallsign" type="text" placeholder="FWE123" readonly></label>
+        <label class="field">Indicatif pilote<input id="profCallsign" type="text" placeholder="FWI123" readonly></label>
         <div class="actions">
           <button id="btnSaveProfile" class="btn primary">Enregistrer</button>
           <button id="btnReplayWelcome" class="btn outline">Revoir l'accueil</button>
@@ -232,6 +239,16 @@
           </div>
           <p id="updStatus" class="muted small" style="margin-bottom:0">Mises à jour pas encore configurées</p>
         </div>
+        <div class="card beta-card">
+          <h2>Bêta-testeur</h2>
+          <p class="muted small">Reçois les nouveautés avant tout le monde pour les tester. Une version bêta peut contenir des petits défauts : signale-les avec le bouton « Une idée ? ».</p>
+          <label class="switch">
+            <input id="betaToggle" type="checkbox">
+            <span class="switch-ui" aria-hidden="true"></span>
+            <span class="switch-label">Recevoir les versions bêta</span>
+          </label>
+          <p id="betaStatus" class="muted small" style="margin-bottom:0"></p>
+        </div>
       </aside>
     </div>
   </section>
@@ -248,7 +265,7 @@
     <div class="welcome-card">
       <div id="lockLogin">
         <h2>Ton code d'accès</h2>
-        <label class="field">Code reçu sur Discord<input id="lockCode" type="text" placeholder="FWE-XXXX-XXXX" autocomplete="off" spellcheck="false"></label>
+        <label class="field">Code reçu sur Discord<input id="lockCode" type="text" placeholder="FWI-XXXX-XXXX" autocomplete="off" spellcheck="false"></label>
         <p id="lockMsg" class="lock-msg" role="alert"></p>
         <button id="btnLock" class="btn dark">Entrer dans l'ACARS</button>
         <p class="muted small">Pas encore de code ? Demande-le à la compagnie sur notre serveur Discord.</p>
@@ -302,7 +319,7 @@
     <div class="welcome-card">
       <h2>Ton profil pilote</h2>
       <label class="field">Prénom<input id="wName" type="text" placeholder="Ex. : Marc"></label>
-      <label class="field">Indicatif pilote<input id="wCallsign" type="text" value="FWE" placeholder="FWE123" readonly></label>
+      <label class="field">Indicatif pilote<input id="wCallsign" type="text" value="FWI" placeholder="FWI123" readonly></label>
       <div class="steps">
         <div class="steps-title">TES PREMIERS PAS</div>
         <div class="step"><span class="num done">1</span>Compte créé</div>
@@ -316,10 +333,51 @@
   </div>
 </div>
 
-<div id="updBanner" class="upd-banner hidden" role="status">
-  <span id="updBannerText">Une mise à jour est prête.</span>
-  <button id="btnUpdInstall" class="btn primary small">Redémarrer et mettre à jour</button>
-  <button id="btnUpdLater" class="btn outline small">Plus tard</button>
+<!-- MISE À JOUR (fenêtre au premier plan) -->
+<div id="updPop" class="news-overlay upd-pop hidden" role="dialog" aria-modal="true" aria-labelledby="updPopTitle">
+  <div class="news-box">
+    <div class="news-head">
+      <div class="news-mascot js-mascot"></div>
+      <div>
+        <div class="kicker-dark">MISE À JOUR</div>
+        <h2 id="updPopTitle">Une nouvelle version arrive !</h2>
+        <div id="updPopSub" class="muted small"></div>
+      </div>
+    </div>
+    <div class="upd-progress" aria-hidden="true"><div id="updPopBar"></div></div>
+    <p id="updPopText" class="upd-text"></p>
+    <div class="actions" style="justify-content:flex-end;margin-top:0">
+      <button id="btnUpdLater" class="btn outline">Plus tard</button>
+      <button id="btnUpdInstall" class="btn primary" disabled>Redémarrer et installer</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOÎTE À IDÉES -->
+<div id="ideaPop" class="news-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ideaTitle">
+  <div class="news-box">
+    <div class="news-head">
+      <div class="news-mascot js-mascot"></div>
+      <div>
+        <h2 id="ideaTitle">Une idée pour l'ACARS ?</h2>
+        <div class="muted small">Ti-Pilote la transmet directement à la compagnie.</div>
+      </div>
+    </div>
+    <div class="idea-types" role="radiogroup" aria-label="Type d'idée">
+      <button class="pill active" data-type="Nouvelle fonction" role="radio" aria-checked="true">Nouvelle fonction</button>
+      <button class="pill" data-type="Amélioration" role="radio" aria-checked="false">Amélioration</button>
+      <button class="pill" data-type="Problème" role="radio" aria-checked="false">Un problème</button>
+      <button class="pill" data-type="Autre" role="radio" aria-checked="false">Autre</button>
+    </div>
+    <label class="field" for="ideaText" style="margin-top:0">Ton idée
+      <textarea id="ideaText" rows="5" maxlength="1000" placeholder="Ex. : pouvoir voir la météo de destination pendant le vol"></textarea>
+    </label>
+    <div class="idea-foot"><span id="ideaCount" class="muted small">0 / 1000</span><span id="ideaMsg" class="lock-msg" role="status"></span></div>
+    <div class="actions" style="justify-content:flex-end;margin-top:0">
+      <button id="ideaCancel" class="btn outline">Annuler</button>
+      <button id="ideaSend" class="btn primary">Envoyer mon idée</button>
+    </div>
+  </div>
 </div>
 <div id="news" class="news-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="newsTitle">
   <div class="news-box">

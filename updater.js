@@ -30,6 +30,21 @@ function validOwner(owner) {
   return typeof owner === 'string' && /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(owner);
 }
 
+// Programme bêta-testeur : reçoit aussi les versions « bêta » publiées avant la sortie officielle
+function isBeta() { return !!readConfig().beta; }
+function applyChannel() {
+  const beta = isBeta();
+  autoUpdater.channel = beta ? 'beta' : 'latest';
+  autoUpdater.allowPrerelease = beta;
+  autoUpdater.allowDowngrade = false;
+}
+function setBeta(on) {
+  writeConfig(Object.assign(readConfig(), { beta: !!on }));
+  applyChannel();
+  check();
+  return { ok: true, beta: !!on };
+}
+
 function configure(owner) {
   if (!validOwner(owner)) { configured = false; return false; }
   autoUpdater.setFeedURL({ provider: 'github', owner, repo: REPO });
@@ -55,12 +70,13 @@ function init(onStatus) {
   notify = onStatus || notify;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.allowPrerelease = false;
+  applyChannel();
 
   autoUpdater.on('checking-for-update', () => setStatus('checking', 'Recherche d\'une nouvelle version…'));
   autoUpdater.on('update-not-available', () => setStatus('uptodate', 'Le logiciel est à jour (v' + app.getVersion() + ')'));
-  autoUpdater.on('update-available', (info) => setStatus('downloading', 'Nouvelle version ' + info.version + ' trouvée, téléchargement…', { version: info.version, percent: 0 }));
-  autoUpdater.on('download-progress', (p) => setStatus('downloading', 'Téléchargement de la mise à jour : ' + Math.round(p.percent) + ' %', { percent: Math.round(p.percent) }));
+  let pending = '';
+  autoUpdater.on('update-available', (info) => { pending = info.version; setStatus('downloading', 'Nouvelle version ' + info.version + ' trouvée, téléchargement…', { version: info.version, percent: 0 }); });
+  autoUpdater.on('download-progress', (p) => setStatus('downloading', 'Téléchargement de la mise à jour : ' + Math.round(p.percent) + ' %', { version: pending, percent: Math.round(p.percent) }));
   autoUpdater.on('update-downloaded', (info) => setStatus('ready', 'La version ' + info.version + ' est prête à être installée', { version: info.version }));
   autoUpdater.on('error', () => setStatus('error', 'La mise à jour n\'a pas pu être vérifiée ou téléchargée'));
 
@@ -74,7 +90,7 @@ function init(onStatus) {
 function setOwner(owner) {
   owner = String(owner || '').trim();
   if (!validOwner(owner)) return { ok: false, message: 'Pseudo GitHub invalide' };
-  writeConfig({ owner });
+  writeConfig(Object.assign(readConfig(), { owner }));
   configure(owner);
   check();
   return { ok: true };
@@ -84,7 +100,8 @@ module.exports = {
   init,
   check,
   setOwner,
-  getConfig: () => ({ owner: readConfig().owner || DEFAULT_OWNER, repo: REPO, version: app.getVersion(), status: lastStatus }),
+  setBeta,
+  getConfig: () => ({ beta: isBeta(), owner: readConfig().owner || DEFAULT_OWNER, repo: REPO, version: app.getVersion(), status: lastStatus }),
   install: () => autoUpdater.quitAndInstall(false, true),
   stop: () => clearInterval(timer)
 };
