@@ -179,7 +179,7 @@
 
   // ---------- Vrais vols Air Caraïbes (positions réelles ADS-B, indicatif FWI) ----------
   const REAL_PLANE = PLANE.replace('#0e8a9a', '#1d4ea8').replace(/width="34" height="34"/, 'width="28" height="28"');
-  const REAL_TYPES = { A359: 'Airbus A350-900', A35K: 'Airbus A350-1000' };
+  const REAL_TYPES = { A359: 'Airbus A350-900', A35K: 'Airbus A350-1000', A332: 'Airbus A330-200', A333: 'Airbus A330-300', AT75: 'ATR 72-500', AT76: 'ATR 72-600' };
   const realMarkers = {};
   let realData = null;
   function realPos(f) {
