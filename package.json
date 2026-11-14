@@ -1,6 +1,6 @@
 {
   "name": "air-caraibe-virtual-acars",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Air Caraïbe Virtual — ACARS bêta",
   "main": "main.js",
   "scripts": {

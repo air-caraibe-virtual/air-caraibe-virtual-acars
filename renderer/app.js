@@ -50,6 +50,16 @@
     ['TFFF','TBPB','carib'],['TFFR','SOCA','carib'],['TFFF','SOCA','carib'],['TFFR','MDPC','carib'],['TFFF','MDPC','carib'],
     ['TFFR','LFPO','transat'],['TFFF','LFPO','transat'],['SOCA','LFPO','transat']
   ];
+  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359' };
+  function simbriefUrl(f) {
+    const q = new URLSearchParams({
+      airline: 'ACX', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
+      orig: f.from, dest: f.to, deph: (f.dep || '').slice(0, 2), depm: (f.dep || '').slice(3, 5),
+      steh: String(Math.floor(f.mins / 60)), stem: String(f.mins % 60)
+    });
+    return 'https://dispatch.simbrief.com/options/custom?' + q.toString();
+  }
+  function openUrl(url) { if (window.acv) window.acv.openExternal(url); else window.open(url, '_blank'); }
   const CAT_LABELS = { all: 'Tous', iles: 'Inter-îles', carib: 'Caraïbes', transat: 'Transatlantique' };
 
   function distanceNm(lat1, lon1, lat2, lon2) {
@@ -169,6 +179,10 @@
     if (!map) return;
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
     if (!flight) return;
+    if (flight.ofp && flight.ofp.fixes && flight.ofp.fixes.length > 1) {
+      routeLine = L.polyline(flight.ofp.fixes.map((f) => [f.lat, f.lon]), { color: '#2b1a22', weight: 2.5, dashArray: '6 6' }).addTo(map);
+      return;
+    }
     const a = AIRPORTS[flight.from], b = AIRPORTS[flight.to];
     routeLine = L.polyline([[a[1], a[2]], [b[1], b[2]]], { color: '#2b1a22', weight: 2, dashArray: '8 8' }).addTo(map);
   }
@@ -251,6 +265,33 @@
     }
   }
 
+  function ofpHtml(a) {
+    const o = a.ofp;
+    if (!o) return '';
+    const warn = (o.from !== a.from || o.to !== a.to)
+      ? '<div class="tag warn" style="margin-top:8px">Le plan SimBrief est ' + esc(o.from) + ' → ' + esc(o.to) + ', différent de ce vol</div>' : '';
+    return '<div class="ofp">' +
+      '<div class="ofp-grid"><div><span>Plan SimBrief</span><b>' + esc(o.flight || '—') + '</b></div>' +
+      '<div><span>Croisière</span><b>' + esc(o.cruise || '—') + '</b></div>' +
+      '<div><span>Carburant</span><b>' + esc(o.fuel || '—') + '</b></div>' +
+      '<div><span>Temps prévu</span><b>' + (o.ete ? fmtDur(Math.round(o.ete / 60)) : '—') + '</b></div></div>' +
+      '<div class="ofp-route">' + esc(o.route || 'Route directe') + '</div>' + warn + '</div>';
+  }
+  function importOfp() {
+    const user = (store.get('profile', {}).simbrief || '').trim();
+    if (!user) { toast('Ajoute ton identifiant SimBrief dans « Profil » d\'abord'); showView('profil'); return; }
+    if (!window.acv || !window.acv.simbriefFetch) { toast('Import SimBrief indisponible'); return; }
+    toast('Import du plan SimBrief…');
+    window.acv.simbriefFetch(user).then((r) => {
+      if (!r.ok) { toast(r.message); return; }
+      const a = getActive();
+      if (!a) return;
+      a.ofp = r.ofp;
+      setActive(a);
+      toast('Plan SimBrief importé : ' + r.ofp.from + ' → ' + r.ofp.to);
+    }).catch(() => toast('Import SimBrief impossible pour le moment'));
+  }
+
   function renderActive() {
     const a = getActive();
     const box = $('activeFlight');
@@ -265,8 +306,13 @@
       '<div class="row"><b style="color:#8f1238">' + esc(a.num) + '</b><span class="tag live">' + stateLabel + '</span></div>' +
       '<div style="font-family:var(--serif);font-size:30px;font-weight:700;margin:6px 0">' + esc(a.from) + ' → ' + esc(a.to) + '</div>' +
       '<div class="muted small">' + esc(AIRPORTS[a.from][0]) + ' → ' + esc(AIRPORTS[a.to][0]) + ' · ' + esc(a.aircraft) + '</div>' +
-      '<div class="actions"><button class="btn outline small" id="btnAbort">Annuler le suivi</button></div>';
+      ofpHtml(a) +
+      '<div class="actions"><button class="btn primary small" id="btnOfp">Importer mon plan SimBrief</button>' +
+      '<button class="btn outline small" id="btnSbOpen">Ouvrir dans SimBrief</button>' +
+      '<button class="btn outline small" id="btnAbort">Annuler le suivi</button></div>';
     $('btnAbort').addEventListener('click', () => { setActive(null); toast('Suivi du vol annulé'); });
+    $('btnSbOpen').addEventListener('click', () => openUrl(simbriefUrl(a)));
+    $('btnOfp').addEventListener('click', importOfp);
   }
 
   // ---------- Vols aléatoires ----------
@@ -330,6 +376,7 @@
           '<td>' + f.aircraft + '</td><td>' + f.nm + ' NM</td><td>' + fmtDur(f.mins) + '</td><td>' + f.dep + '</td>' +
           '<td style="text-align:right;white-space:nowrap">' +
           (isActive ? '<span class="tag live">Suivi en cours</span>' :
+            '<button class="btn outline small" data-simbrief="' + f.id + '">SimBrief</button> ' +
             '<button class="btn primary small" data-start="' + f.id + '">Démarrer</button> ' +
             '<button class="btn outline small" data-cancel="' + f.id + '">Annuler</button>') +
           '</td></tr>';
@@ -341,6 +388,12 @@
       renderBookings();
       showView('carte');
       toast('Suivi de ' + f.num + ' démarré : décolle de ' + f.from + ' dans MSFS 2024');
+    }));
+    $('bookings').querySelectorAll('[data-simbrief]').forEach((b) => b.addEventListener('click', () => {
+      const f = store.get('bookings', []).find((x) => x.id === b.dataset.simbrief);
+      if (!f) return;
+      openUrl(simbriefUrl(f));
+      toast('SimBrief s\'ouvre avec ' + f.num + ' déjà rempli. Génère ton plan, puis importe-le dans « Carte live ».');
     }));
     $('bookings').querySelectorAll('[data-cancel]').forEach((b) => b.addEventListener('click', () => {
       store.set('bookings', store.get('bookings', []).filter((x) => x.id !== b.dataset.cancel));
@@ -389,7 +442,7 @@
   }
   function closeWelcome() {
     stopVoice();
-    const p = { name: $('wName').value.trim(), callsign: $('wCallsign').value.trim() };
+    const p = Object.assign({}, store.get('profile', {}), { name: $('wName').value.trim(), callsign: $('wCallsign').value.trim() });
     store.set('profile', p);
     loadProfile();
     $('welcome').classList.add('hidden');
@@ -428,9 +481,10 @@
     const p = store.get('profile', {});
     $('profName').value = p.name || '';
     $('profCallsign').value = p.callsign || '';
+    $('profSimbrief').value = p.simbrief || '';
   }
   $('btnSaveProfile').addEventListener('click', () => {
-    store.set('profile', { name: $('profName').value.trim(), callsign: $('profCallsign').value.trim() });
+    store.set('profile', { name: $('profName').value.trim(), callsign: $('profCallsign').value.trim(), simbrief: $('profSimbrief').value.trim() });
     toast('Profil enregistré');
   });
 

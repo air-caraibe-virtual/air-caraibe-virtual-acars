@@ -62,6 +62,37 @@ sim.on('status', (s) => send('sim:status', s));
 sim.on('data', (d) => send('sim:data', d));
 
 ipcMain.handle('app:version', () => app.getVersion());
+ipcMain.handle('simbrief:fetch', async (_e, username) => {
+  username = String(username || '').trim();
+  if (!/^[A-Za-z0-9_.-]{2,40}$/.test(username)) return { ok: false, message: 'Identifiant SimBrief invalide' };
+  try {
+    const res = await fetch('https://www.simbrief.com/api/xml.fetcher.php?username=' + encodeURIComponent(username) + '&json=1');
+    const d = await res.json();
+    if (!d || !d.origin || !d.destination) {
+      const why = d && d.fetch && d.fetch.status ? String(d.fetch.status) : 'aucun plan trouvé';
+      return { ok: false, message: 'SimBrief : ' + why };
+    }
+    const fixes = (d.navlog && d.navlog.fix ? [].concat(d.navlog.fix) : [])
+      .map((f) => ({ id: f.ident, lat: parseFloat(f.pos_lat), lon: parseFloat(f.pos_long) }))
+      .filter((f) => isFinite(f.lat) && isFinite(f.lon));
+    const g = d.general || {}, fuel = d.fuel || {}, times = d.times || {}, params = d.params || {};
+    return {
+      ok: true,
+      ofp: {
+        from: d.origin.icao_code, to: d.destination.icao_code,
+        flight: (g.icao_airline || '') + (g.flight_number || ''),
+        aircraft: (d.aircraft && (d.aircraft.icaocode || d.aircraft.name)) || '',
+        route: g.route || '',
+        cruise: g.initial_altitude ? 'FL' + String(Math.round(Number(g.initial_altitude) / 100)).padStart(3, '0') : '',
+        fuel: fuel.plan_ramp ? fuel.plan_ramp + ' ' + (params.units || '') : '',
+        ete: times.est_time_enroute ? Number(times.est_time_enroute) : 0,
+        fixes
+      }
+    };
+  } catch (e) {
+    return { ok: false, message: 'Impossible de joindre SimBrief (vérifie ta connexion Internet)' };
+  }
+});
 ipcMain.handle('update:getConfig', () => updater.getConfig());
 ipcMain.handle('update:setOwner', (_e, owner) => updater.setOwner(owner));
 ipcMain.handle('update:check', () => updater.check());
