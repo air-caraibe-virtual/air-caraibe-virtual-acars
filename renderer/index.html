@@ -179,11 +179,13 @@
       <div class="card wide">
         <h1>Mon profil pilote</h1>
         <label class="field">Prénom<input id="profName" type="text" placeholder="Ex. : Marc"></label>
-        <label class="field">Indicatif pilote<input id="profCallsign" type="text" placeholder="FWE123"></label>
+        <label class="field">Indicatif pilote<input id="profCallsign" type="text" placeholder="FWE123" readonly></label>
         <div class="actions">
           <button id="btnSaveProfile" class="btn primary">Enregistrer</button>
           <button id="btnReplayWelcome" class="btn outline">Revoir l'accueil</button>
+          <button id="btnLogout" class="btn outline">Se déconnecter</button>
         </div>
+        <p class="muted small">Ton indicatif est donné par la compagnie avec ton code d'accès.</p>
       </div>
       <aside class="side">
         <div class="card">
@@ -235,6 +237,37 @@
   </section>
 </main>
 
+<!-- ACCÈS PILOTE (réservé aux pilotes actifs de la compagnie) -->
+<div id="lock" class="welcome lock" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="welcome-inner">
+    <div class="welcome-left">
+      <div class="kicker">ESPACE PILOTES</div>
+      <h1 id="lockTitle">Réservé aux pilotes d'Air Caraïbe Virtual</h1>
+      <p class="lead">Chaque pilote de la compagnie reçoit un code d'accès personnel. Tu ne le tapes qu'une seule fois.</p>
+    </div>
+    <div class="welcome-card">
+      <div id="lockLogin">
+        <h2>Ton code d'accès</h2>
+        <label class="field">Code reçu sur Discord<input id="lockCode" type="text" placeholder="FWE-XXXX-XXXX" autocomplete="off" spellcheck="false"></label>
+        <p id="lockMsg" class="lock-msg" role="alert"></p>
+        <button id="btnLock" class="btn dark">Entrer dans l'ACARS</button>
+        <p class="muted small">Pas encore de code ? Demande-le à la compagnie sur notre serveur Discord.</p>
+      </div>
+      <div id="lockRevoked" class="hidden">
+        <h2>Accès retiré</h2>
+        <p class="muted">Ton accès à l'ACARS Air Caraïbe Virtual a été retiré. Si tu penses que c'est une erreur, contacte la compagnie sur Discord.</p>
+        <button id="btnNewCode" class="btn outline">J'ai un nouveau code</button>
+      </div>
+      <div id="lockOffline" class="hidden">
+        <h2>Pas de connexion</h2>
+        <p class="muted">L'ACARS doit vérifier ton accès auprès de la compagnie. Vérifie ta connexion internet puis réessaie.</p>
+        <button id="btnRetry" class="btn dark">Réessayer</button>
+      </div>
+      <button class="btn discord js-discord">Rejoindre notre serveur Discord</button>
+    </div>
+  </div>
+</div>
+
 <!-- ACCUEIL NOUVEAU PILOTE -->
 <div id="welcome" class="welcome hidden" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
   <div class="welcome-inner">
@@ -269,7 +302,7 @@
     <div class="welcome-card">
       <h2>Ton profil pilote</h2>
       <label class="field">Prénom<input id="wName" type="text" placeholder="Ex. : Marc"></label>
-      <label class="field">Indicatif pilote<input id="wCallsign" type="text" value="FWE" placeholder="FWE123"></label>
+      <label class="field">Indicatif pilote<input id="wCallsign" type="text" value="FWE" placeholder="FWE123" readonly></label>
       <div class="steps">
         <div class="steps-title">TES PREMIERS PAS</div>
         <div class="step"><span class="num done">1</span>Compte créé</div>

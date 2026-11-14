@@ -917,7 +917,7 @@
     $('welcomeScript').textContent = welcomeScript(n);
   }
   function openWelcome() {
-    const p = store.get('profile', {});
+    const p = store.get('profile', null) || store.get('pendingProfile', {});
     $('wName').value = p.name || '';
     $('wCallsign').value = p.callsign || 'FWE';
     refreshWelcome();
@@ -1116,6 +1116,52 @@
     showNews(fresh, 'Ton ACARS vient de passer en version ' + version + '. Voici ce qui a changé :');
   }
 
+
+  // ---------- Accès pilote ----------
+  function lockShow(mode, msg) {
+    ['lockLogin', 'lockRevoked', 'lockOffline'].forEach((id) => $(id).classList.toggle('hidden', id !== mode));
+    $('lockMsg').textContent = msg || '';
+    $('lock').classList.remove('hidden');
+    if (mode === 'lockLogin') setTimeout(() => $('lockCode').focus(), 50);
+  }
+  let appStarted = false;
+  function applyAuth(r) {
+    if (!r) return lockShow('lockOffline');
+    if (r.state === 'ok') {
+      $('lock').classList.add('hidden');
+      const p = store.get('profile', null);
+      const a = r.pilot || {};
+      const next = Object.assign({}, p || {}, { callsign: a.callsign || (p && p.callsign) || '' });
+      if (a.name && !(p && p.name)) next.name = a.name;
+      if (p) store.set('profile', next);
+      loadProfile();
+      if (!appStarted) { appStarted = true; if (!p) { store.set('pendingProfile', next); openWelcome(); } }
+      return;
+    }
+    if (r.state === 'revoked') return lockShow('lockRevoked');
+    if (r.state === 'offline') return lockShow('lockOffline');
+    lockShow('lockLogin', r.error);
+  }
+  function authCheck(code) {
+    if (!window.acv || !window.acv.authCheck) return Promise.resolve(applyAuth({ state: 'ok' }));
+    return window.acv.authCheck(code).then(applyAuth).catch(() => lockShow('lockOffline'));
+  }
+  $('btnLock').addEventListener('click', () => {
+    const c = $('lockCode').value.trim();
+    if (!c) { $('lockMsg').textContent = 'Tape ton code d\'accès.'; return; }
+    $('btnLock').disabled = true; $('lockMsg').textContent = 'Vérification…';
+    authCheck(c).finally(() => { $('btnLock').disabled = false; });
+  });
+  $('lockCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('btnLock').click(); });
+  $('btnNewCode').addEventListener('click', () => lockShow('lockLogin'));
+  $('btnRetry').addEventListener('click', () => authCheck());
+  $('btnLogout').addEventListener('click', () => {
+    if (window.acv && window.acv.authLogout) window.acv.authLogout();
+    $('lockCode').value = ''; lockShow('lockLogin');
+  });
+  if (window.acv && window.acv.onAuthRevoked) window.acv.onAuthRevoked(() => lockShow('lockRevoked'));
+  setInterval(() => { if ($('lock').classList.contains('hidden')) authCheck(); }, 10 * 60 * 1000);
+
   // ---------- Démarrage ----------
   initMap();
   if (store.get('mapSat', false)) setMapMode(true);
@@ -1130,5 +1176,5 @@
   renderActive();
   drawRoute(getActive());
   loadProfile();
-  if (!store.get('profile', null)) openWelcome();
+  authCheck();
 })();

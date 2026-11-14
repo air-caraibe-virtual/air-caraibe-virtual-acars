@@ -3,6 +3,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('acv', {
   version: () => ipcRenderer.invoke('app:version'),
+  authCheck: (code) => ipcRenderer.invoke('auth:check', code),
+  authLogout: () => ipcRenderer.invoke('auth:logout'),
+  onAuthRevoked: (cb) => ipcRenderer.on('auth:revoked', () => cb()),
   simStatus: () => ipcRenderer.invoke('sim:getStatus'),
   onSimStatus: (cb) => ipcRenderer.on('sim:status', (_e, s) => cb(s)),
   onSimData: (cb) => ipcRenderer.on('sim:data', (_e, d) => cb(d)),

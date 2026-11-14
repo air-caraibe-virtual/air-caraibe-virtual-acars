@@ -63,9 +63,42 @@ sim.on('status', (s) => send('sim:status', s));
 sim.on('data', (d) => send('sim:data', d));
 
 ipcMain.handle('app:version', () => app.getVersion());
-ipcMain.handle('board:submit', (_e, entry) => board.submit(entry));
+
+// ---------- Accès pilote : seuls les pilotes actifs de la compagnie peuvent utiliser l'ACARS ----------
+const fs = require('fs');
+const OFFLINE_GRACE = 3 * 24 * 3600 * 1000;   // sans internet, l'ACARS reste utilisable 3 jours après la dernière vérification
+const accessFile = () => path.join(app.getPath('userData'), 'acces-pilote.json');
+function readAccess() { try { return JSON.parse(fs.readFileSync(accessFile(), 'utf8')); } catch (e) { return null; } }
+function writeAccess(a) { try { if (a) fs.writeFileSync(accessFile(), JSON.stringify(a)); else fs.unlinkSync(accessFile()); } catch (e) { /* rien */ } }
+async function checkAccess(code) {
+  const saved = readAccess();
+  code = String(code || (saved && saved.code) || '').trim().toUpperCase();
+  if (!code) return { state: 'login' };
+  const r = await board.auth(code);
+  if (!r) {                                    // pas de réponse : on tolère quelques jours hors ligne
+    if (saved && saved.code === code && Date.now() - saved.lastOk < OFFLINE_GRACE) { board.setCode(code); return { state: 'ok', offline: true, pilot: saved }; }
+    return { state: saved ? 'offline' : 'login', offline: true, error: 'Impossible de joindre la compagnie. Vérifie ta connexion internet.' };
+  }
+  if (r.status === 'actif') {
+    const a = { code, callsign: r.callsign, name: r.name, lastOk: Date.now() };
+    writeAccess(a); board.setCode(code);
+    return { state: 'ok', pilot: a };
+  }
+  if (r.status === 'retire') { writeAccess(null); board.setCode(''); return { state: 'revoked' }; }
+  if (saved && saved.code === code) writeAccess(null);
+  board.setCode('');
+  return { state: 'login', error: "Ce code n'existe pas. Vérifie-le ou demande-le sur Discord." };
+}
+ipcMain.handle('auth:check', (_e, code) => checkAccess(code));
+ipcMain.handle('auth:logout', () => { writeAccess(null); board.setCode(''); return true; });
+async function guarded(fn) {             // un envoi refusé par la compagnie = accès retiré
+  const r = await fn();
+  if (r && r.revoked) { writeAccess(null); board.setCode(''); if (win) win.webContents.send('auth:revoked'); }
+  return r;
+}
+ipcMain.handle('board:submit', (_e, entry) => guarded(() => board.submit(entry)));
 ipcMain.handle('board:list', () => board.list());
-ipcMain.handle('live:post', (_e, pos) => board.livePost(pos));
+ipcMain.handle('live:post', (_e, pos) => guarded(() => board.livePost(pos)));
 ipcMain.handle('live:list', () => board.liveList());
 // Radar de pluie (RainViewer, gratuit et sans clé) : dernière image disponible
 ipcMain.handle('wx:radar', async () => {
