@@ -706,7 +706,7 @@
     const box = $('activeFlight');
     if (!a) {
       box.className = 'muted';
-      box.textContent = 'Aucun vol démarré. Réserve un vol dans « Vols aléatoires », puis démarre-le dans « Mes vols ».';
+      box.textContent = 'Aucun vol démarré. Réserve un vol dans « Réservation de vol », puis démarre-le dans « Mes vols ».';
       return;
     }
     const stateLabel = a.state === 'prep' ? 'En attente du décollage' : 'En vol';
@@ -725,7 +725,7 @@
     $('btnOfp').addEventListener('click', importOfp);
   }
 
-  // ---------- Vols aléatoires ----------
+  // ---------- Réservation de vol ----------
   let cat = 'all';
   let plane = 'all';
   let current = makeFlight(cat, null, plane);
@@ -858,7 +858,7 @@
     const list = store.get('bookings', []);
     const active = getActive();
     if (!list.length) {
-      $('bookings').innerHTML = '<div class="empty">Aucun vol réservé pour le moment. Va dans « Vols aléatoires » pour en choisir un.</div>';
+      $('bookings').innerHTML = '<div class="empty">Aucun vol réservé pour le moment. Va dans « Réservation de vol » pour en choisir un.</div>';
       return;
     }
     $('bookings').innerHTML = '<div class="table-wrap"><table><thead><tr><th>VOL</th><th>ROUTE</th><th>APPAREIL</th><th>DISTANCE</th><th>DURÉE</th><th>DÉPART</th><th></th></tr></thead><tbody>' +
