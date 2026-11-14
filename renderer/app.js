@@ -650,15 +650,15 @@
   // ---------- Profil, accueil et voix ----------
   function welcomeScript(name) {
     const who = name && name.trim() ? name.trim() : 'commandant';
-    return 'Bonjour ' + who + ', et bienvenue chez Air Caraïbe Virtual ! Toute l\'équipe est ravie de vous compter parmi nos pilotes. ' +
-      'Depuis Pointe-à-Pitre et Fort-de-France, nos lignes vous emmènent de Saint-Barthélemy à Cayenne, et jusqu\'à Paris-Orly. ' +
-      'Rejoignez aussi notre serveur Discord pour retrouver les autres pilotes de la compagnie. ' +
-      'Ensuite, réservez votre premier vol, lancez Microsoft Flight Simulator, et notre ACARS s\'occupe du reste. ' +
-      'Attachez vos ceintures, et bon vol au soleil des Antilles !';
+    return 'Moi, c\'est Ti-Pilote, ton assistant de bord. Bienvenue chez Air Caraïbe Virtual, ' + who + ' ! ' +
+      'Depuis Pointe-à-Pitre et Fort-de-France, nos lignes t\'emmènent de Saint-Barth à Cayenne, jusqu\'à Paris-Orly. ' +
+      'Rejoins notre Discord pour retrouver les autres pilotes, réserve ton premier vol, et lance MSFS 2024 : je m\'occupe du reste. ' +
+      'Si tu as une question, clique sur moi en bas à droite de l\'écran !';
   }
   function refreshWelcome() {
     const n = $('wName').value.trim();
-    $('welcomeTitle').textContent = n ? 'Bienvenue, commandant ' + n + ' !' : 'Bienvenue, commandant !';
+    const hello = isEvening() ? 'Bonsoir' : 'Bonjour';
+    $('welcomeTitle').textContent = hello + ', commandant' + (n ? ' ' + n : '') + ' !';
     $('welcomeScript').textContent = welcomeScript(n);
   }
   function openWelcome() {
@@ -690,7 +690,7 @@
   welcomeAudio.preload = 'auto';
   welcomeAudio.volume = 0.9;
   let voiceTimer = null;
-  function setSpeaking(on) { $('voiceOn').classList.toggle('hidden', !on); }
+  function setSpeaking(on) { $('voiceOn').classList.toggle('hidden', !on); $('tipiloteBig').classList.toggle('talking', on); }
   welcomeAudio.addEventListener('playing', () => setSpeaking(true));
   welcomeAudio.addEventListener('ended', () => setSpeaking(false));
   welcomeAudio.addEventListener('pause', () => setSpeaking(false));

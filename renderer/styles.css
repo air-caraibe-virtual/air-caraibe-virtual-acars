@@ -211,3 +211,19 @@ td.num { font-variant-numeric: tabular-nums; font-weight: 700; }
 details.faq { border-bottom: 1px solid var(--line); padding: 8px 0; font-size: 14px; }
 details.faq summary { font-weight: 700; cursor: pointer; }
 details.faq p { margin: 6px 0 0; color: var(--muted); }
+
+/* Accueil présenté par Ti-Pilote */
+.tipilote-welcome { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px; max-width: 680px; }
+.tipilote-big { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tipilote-big svg { width: 150px; height: 150px; border-radius: 99px; background: #fdf0f3; border: 5px solid #fff; box-shadow: 0 14px 34px rgba(0,0,0,0.35); }
+.tipilote-big.talking svg { animation: talk 0.5s ease-in-out infinite alternate; }
+@keyframes talk { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(-6px) rotate(2deg); } }
+@media (prefers-reduced-motion: reduce) { .tipilote-big.talking svg { animation: none; } }
+.tipilote-name { background: #ffd23f; color: #2b1a22; font-weight: 800; font-size: 13px; padding: 3px 12px; border-radius: 99px; }
+.speech { position: relative; flex: 1 1 300px; min-width: 0; background: #fff; color: var(--ink); border-radius: 22px 22px 22px 6px; padding: 20px 22px; box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+.speech::before { content: ""; position: absolute; left: -12px; bottom: 26px; border-width: 10px 14px 10px 0; border-style: solid; border-color: transparent #fff transparent transparent; }
+.speech h1 { color: var(--flower-dark); font-size: 34px; line-height: 1.1; margin: 0 0 10px; }
+.speech p { margin: 0; font-size: 16px; line-height: 1.6; }
+.speech .voice-on { margin-top: 12px; color: var(--flower-dark); font-size: 14px; }
+.speech .eq i { background: var(--flower); }
+@media (max-width: 700px) { .speech::before { display: none; } }
