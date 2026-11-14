@@ -65,7 +65,7 @@ function init(onStatus) {
   autoUpdater.on('error', () => setStatus('error', 'La mise à jour n\'a pas pu être vérifiée ou téléchargée'));
 
   const cfg = readConfig();
-  if (configure(cfg.owner || DEFAULT_OWNER)) {
+  if (configure(DEFAULT_OWNER)) {
     setTimeout(check, 8000);
   }
   timer = setInterval(check, CHECK_EVERY_MS);

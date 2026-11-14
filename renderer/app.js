@@ -461,11 +461,8 @@
     }
   }
   if (window.acv && window.acv.updateGetConfig) {
-    window.acv.updateGetConfig().then((c) => { $('updOwner').value = c.owner || ''; showUpdate(c.status); }).catch(() => {});
+    window.acv.updateGetConfig().then((c) => showUpdate(c.status)).catch(() => {});
     window.acv.onUpdateStatus(showUpdate);
-    $('btnUpdSave').addEventListener('click', () => {
-      window.acv.updateSetOwner($('updOwner').value).then((r) => toast(r.ok ? 'Mises à jour configurées' : r.message));
-    });
     $('btnUpdCheck').addEventListener('click', () => window.acv.updateCheck());
     $('btnUpdInstall').addEventListener('click', () => window.acv.updateInstall());
     $('btnUpdLater').addEventListener('click', () => $('updBanner').classList.add('hidden'));
