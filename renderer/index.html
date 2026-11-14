@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.basemaps.cartocdn.com https://server.arcgisonline.com; connect-src 'self'; font-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com; connect-src 'self'; font-src 'self'">
 <title>Air Caraïbe Virtual — ACARS bêta</title>
 <link rel="stylesheet" href="../node_modules/leaflet/dist/leaflet.css">
 <link rel="stylesheet" href="styles.css">
@@ -219,6 +219,38 @@
   <span id="updBannerText">Une mise à jour est prête.</span>
   <button id="btnUpdInstall" class="btn primary small">Redémarrer et mettre à jour</button>
   <button id="btnUpdLater" class="btn outline small">Plus tard</button>
+</div>
+<div id="helper" class="helper">
+  <div id="helperBubble" class="helper-bubble hidden" role="dialog" aria-labelledby="helperTitle">
+    <div class="helper-head">
+      <div><b id="helperTitle">Ti-Pilote</b><div class="muted small">Ton assistant ACARS</div></div>
+      <button id="helperClose" class="helper-x" aria-label="Fermer l'assistant">×</button>
+    </div>
+    <div id="helperBody"></div>
+    <div class="helper-tabs">
+      <button class="pill small-pill" data-help="page">Cet écran</button>
+      <button class="pill small-pill" data-help="steps">Premiers pas</button>
+      <button class="pill small-pill" data-help="faq">Questions</button>
+    </div>
+  </div>
+  <button id="helperBtn" class="helper-btn" aria-label="Ouvrir l'aide de Ti-Pilote">
+    <svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
+      <circle cx="32" cy="34" r="22" fill="#8a5a3c"/>
+      <ellipse cx="32" cy="38" rx="17" ry="15" fill="#c98c62"/>
+      <path d="M10 26 Q32 4 54 26 L54 30 Q32 22 10 30 Z" fill="#2b1a22"/>
+      <rect x="9" y="27" width="46" height="5" rx="2.5" fill="#1d1218"/>
+      <path d="M26 15 h12 l-6 6 z" fill="#ffd23f"/>
+      <g transform="translate(47 17) scale(0.32)"><circle r="7" fill="#ffd23f"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="11" fill="#d6204f"/><ellipse cx="0" cy="-12" rx="7" ry="11" fill="#d6204f" transform="rotate(72)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="11" fill="#d6204f" transform="rotate(144)"/><ellipse cx="0" cy="-12" rx="7" ry="11" fill="#d6204f" transform="rotate(216)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="11" fill="#d6204f" transform="rotate(288)"/><circle r="5" fill="#ffd23f"/></g>
+      <circle cx="25" cy="37" r="2.6" fill="#2b1a22"/><circle cx="39" cy="37" r="2.6" fill="#2b1a22"/>
+      <circle cx="26" cy="36" r="0.9" fill="#fff"/><circle cx="40" cy="36" r="0.9" fill="#fff"/>
+      <path d="M25 45 Q32 51 39 45" stroke="#2b1a22" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <circle cx="20" cy="43" r="2.5" fill="#e98a7a" opacity="0.7"/><circle cx="44" cy="43" r="2.5" fill="#e98a7a" opacity="0.7"/>
+    </svg>
+    <span id="helperDot" class="helper-dot hidden"></span>
+  </button>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 

@@ -111,6 +111,7 @@
   }
 
   // ---------- Navigation ----------
+  let currentView = 'carte';
   let map = null;
   document.querySelectorAll('.nav-btn').forEach((btn) => {
     btn.addEventListener('click', () => showView(btn.dataset.view));
@@ -118,6 +119,8 @@
   function showView(name) {
     document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
     document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === 'view-' + name));
+    currentView = name;
+    if (typeof helperOnView === 'function') helperOnView(name);
     if (name === 'carte' && map) setTimeout(() => map.invalidateSize(), 50);
     if (name === 'mesvols') renderBookings();
     if (name === 'pireps') renderPireps();
@@ -133,14 +136,17 @@
       return;
     }
     map = L.map('map', { zoomControl: true, attributionControl: true }).setView([16.4, -61.6], 7);
-    planLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19, subdomains: 'abcd',
-      attribution: '&copy; OpenStreetMap &copy; CARTO'
-    }).addTo(map);
-    satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    // Fonds de carte Esri : gratuits et sans clé (le plan CARTO exige désormais une clé)
+    planLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 18,
-      attribution: 'Imagerie &copy; Esri, Maxar, Earthstar Geographics'
-    });
+      attribution: 'Carte &copy; Esri, HERE, Garmin, OpenStreetMap'
+    }).addTo(map);
+    satLayer = L.layerGroup([
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18, attribution: 'Imagerie &copy; Esri, Maxar, Earthstar Geographics'
+      }),
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 })
+    ]);
     Object.entries(AIRPORTS).forEach(([code, a]) => {
       L.circleMarker([a[1], a[2]], { radius: 6, color: '#ffffff', weight: 2, fillColor: '#8f1238', fillOpacity: 1 })
         .addTo(map)
@@ -298,7 +304,9 @@
     $('simPill').classList.toggle('on', !!s.connected);
     $('simPill').classList.toggle('off', !s.connected);
     $('simText').textContent = s.message || (s.connected ? 'Connecté' : 'Non connecté');
+    simConnected = !!s.connected;
   }
+  let simConnected = false;
   if (window.acv) {
     window.acv.simStatus().then(setSimStatus).catch(() => {});
     window.acv.onSimStatus(setSimStatus);
@@ -731,6 +739,69 @@
     $('btnUpdInstall').addEventListener('click', () => window.acv.updateInstall());
     $('btnUpdLater').addEventListener('click', () => $('updBanner').classList.add('hidden'));
   }
+
+  // ---------- Ti-Pilote, le petit assistant ----------
+  const HELP_PAGES = {
+    carte: { title: 'La carte live', html: '<p>Ici tu suis ton avion en direct pendant le vol.</p><ul><li>Le voyant en haut à droite passe au vert quand MSFS 2024 est connecté.</li><li>« Plan » ou « Satellite » change le fond de carte.</li><li>La barre d\'avancement montre où tu en es, et l\'étiquette jaune <b>TOD</b> marque le début de descente.</li><li>« Importer mon plan SimBrief » affiche ta route complète.</li></ul>', go: null },
+    vols: { title: 'Choisir un vol', html: '<p>Trois façons de trouver un vol :</p><ul><li><b>Vols du jour</b> : 5 vols communs à toute la compagnie.</li><li><b>Vol aléatoire</b> : clique sur « Proposer un autre vol » jusqu\'à ce qu\'il te plaise.</li><li><b>Avion</b> : choisis ton appareil pour voir toutes ses lignes.</li></ul><p>Clique sur « Réserver », puis va dans « Mes vols ».</p>', go: ['mesvols', 'Voir mes vols'] },
+    mesvols: { title: 'Mes vols réservés', html: '<ol><li>« SimBrief » prépare ton plan de vol déjà rempli.</li><li>« Démarrer » lance le suivi : l\'ACARS attend ton décollage.</li><li>Pose-toi à destination : ton PIREP s\'enregistre tout seul.</li></ol>', go: ['vols', 'Réserver un vol'] },
+    pireps: { title: 'Mes PIREPs', html: '<p>Chaque vol terminé devient un PIREP : temps de vol, altitude maximale et taux d\'atterrissage.</p><p>« Accepté » veut dire que tu t\'es posé à moins de 15 NM de l\'aéroport prévu.</p>', go: ['classement', 'Voir le classement'] },
+    classement: { title: 'Le classement', html: '<p>Les atterrissages les plus doux de toute la compagnie. Plus le chiffre en ft/min est petit, plus le poser est doux.</p><p>Astuce : vise entre -60 et -200 ft/min pour un poser propre.</p>', go: null },
+    profil: { title: 'Ton profil', html: '<p>Mets ton prénom et ton indicatif : c\'est le nom qui apparaît dans le classement.</p><p>Ajoute ton identifiant SimBrief pour importer tes plans de vol en un clic.</p>', go: null }
+  };
+  const HELP_FAQ = [
+    ['Le voyant reste orange, MSFS n\'est pas détecté', 'Lance d\'abord MSFS 2024 et attends d\'être dans le cockpit. L\'ACARS réessaie tout seul toutes les 5 secondes. La liaison ne marche que sur PC.'],
+    ['Mon PIREP dit « Hors destination »', 'Tu t\'es posé à plus de 15 NM de l\'aéroport du vol démarré. Vérifie d\'avoir démarré le bon vol dans « Mes vols ».'],
+    ['L\'import SimBrief ne marche pas', 'Mets ton identifiant SimBrief dans « Profil », génère ton plan sur SimBrief, puis clique sur « Importer mon plan SimBrief ».'],
+    ['C\'est quoi le TOD ?', 'Top Of Descent : le point où tu commences ta descente. En général 3 NM par tranche de 1 000 ft à perdre.'],
+    ['Comment rejoindre les autres pilotes ?', 'Sur notre serveur Discord : bouton dans l\'onglet « Profil ».']
+  ];
+  let helpMode = 'page';
+  function helpSteps() {
+    const p = store.get('profile', {});
+    const steps = [
+      [!!(p.name && p.name.trim()), 'Mettre ton prénom dans le profil', 'profil'],
+      [store.get('bookings', []).length > 0 || store.get('pireps', []).length > 0 || !!getActive(), 'Réserver un premier vol', 'vols'],
+      [!!getActive() || store.get('pireps', []).length > 0, 'Démarrer le vol dans « Mes vols »', 'mesvols'],
+      [simConnected, 'Lancer MSFS 2024 (voyant vert)', null],
+      [store.get('pireps', []).length > 0, 'Te poser : premier PIREP enregistré', 'pireps']
+    ];
+    return steps;
+  }
+  function renderHelper() {
+    let html = '';
+    if (helpMode === 'page') {
+      const h = HELP_PAGES[currentView] || HELP_PAGES.carte;
+      $('helperTitle').textContent = h.title;
+      html = h.html + (h.go ? '<button class="btn primary small helper-go" data-go="' + h.go[0] + '">' + h.go[1] + '</button>' : '');
+    } else if (helpMode === 'steps') {
+      $('helperTitle').textContent = 'Tes premiers pas';
+      const steps = helpSteps();
+      const done = steps.filter((x) => x[0]).length;
+      html = '<p>' + (done === steps.length ? 'Bravo, tu maîtrises l\'ACARS ! Bon vol, commandant.' : done + ' étape(s) sur ' + steps.length + ' faites. Clique sur une étape pour y aller.') + '</p>' +
+        steps.map((x) => '<div class="check-step' + (x[0] ? ' ok' : '') + '"' + (x[2] && !x[0] ? ' data-go="' + x[2] + '" role="button" tabindex="0" style="cursor:pointer"' : '') + '><span class="box">' + (x[0] ? '✓' : '') + '</span><span>' + x[1] + '</span></div>').join('');
+    } else {
+      $('helperTitle').textContent = 'Questions fréquentes';
+      html = HELP_FAQ.map((q) => '<details class="faq"><summary>' + q[0] + '</summary><p>' + q[1] + '</p></details>').join('');
+    }
+    $('helperBody').innerHTML = html;
+    document.querySelectorAll('.helper-tabs .pill').forEach((b) => b.classList.toggle('active', b.dataset.help === helpMode));
+    $('helperBody').querySelectorAll('[data-go]').forEach((el) => {
+      const go = () => { showView(el.dataset.go); };
+      el.addEventListener('click', go);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    });
+  }
+  function helperOpen(mode) { if (mode) helpMode = mode; renderHelper(); $('helperBubble').classList.remove('hidden'); $('helperDot').classList.add('hidden'); store.set('helperSeen', true); }
+  function helperClose() { $('helperBubble').classList.add('hidden'); }
+  function helperOnView() { if (!$('helperBubble').classList.contains('hidden') && helpMode === 'page') renderHelper(); }
+  $('helperBtn').addEventListener('click', () => { if ($('helperBubble').classList.contains('hidden')) helperOpen(); else helperClose(); });
+  $('helperClose').addEventListener('click', helperClose);
+  document.querySelectorAll('.helper-tabs .pill').forEach((b) => b.addEventListener('click', () => { helpMode = b.dataset.help; renderHelper(); }));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') helperClose(); });
+  // Première utilisation : Ti-Pilote se présente après l'accueil
+  if (!store.get('helperSeen', false)) $('helperDot').classList.remove('hidden');
+  $('btnStart').addEventListener('click', () => { if (!store.get('helperSeen', false)) setTimeout(() => helperOpen('steps'), 800); });
 
   // ---------- Démarrage ----------
   initMap();
