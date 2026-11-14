@@ -5,6 +5,7 @@ const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
 const REPO = 'air-caraibe-virtual-acars';
+const DEFAULT_OWNER = 'tedchalosse';
 const CHECK_EVERY_MS = 2 * 60 * 60 * 1000; // toutes les 2 heures
 
 let notify = () => {};
@@ -64,7 +65,7 @@ function init(onStatus) {
   autoUpdater.on('error', () => setStatus('error', 'La mise à jour n\'a pas pu être vérifiée ou téléchargée'));
 
   const cfg = readConfig();
-  if (configure(cfg.owner)) {
+  if (configure(cfg.owner || DEFAULT_OWNER)) {
     setTimeout(check, 8000);
   }
   timer = setInterval(check, CHECK_EVERY_MS);
@@ -83,7 +84,7 @@ module.exports = {
   init,
   check,
   setOwner,
-  getConfig: () => ({ owner: readConfig().owner || '', repo: REPO, version: app.getVersion(), status: lastStatus }),
+  getConfig: () => ({ owner: readConfig().owner || DEFAULT_OWNER, repo: REPO, version: app.getVersion(), status: lastStatus }),
   install: () => autoUpdater.quitAndInstall(false, true),
   stop: () => clearInterval(timer)
 };

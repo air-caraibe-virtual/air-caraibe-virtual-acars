@@ -1,6 +1,6 @@
 {
   "name": "air-caraibe-virtual-acars",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Air Caraïbe Virtual — ACARS bêta",
   "main": "main.js",
   "scripts": {
@@ -62,10 +62,14 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "aircaraibevirtual",
+        "owner": "tedchalosse",
         "repo": "air-caraibe-virtual-acars",
         "releaseType": "release"
       }
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tedchalosse/air-caraibe-virtual-acars.git"
   }
 }
