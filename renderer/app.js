@@ -53,7 +53,7 @@
   const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359' };
   function simbriefUrl(f) {
     const q = new URLSearchParams({
-      airline: 'ACX', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
+      airline: 'FWE', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
       orig: f.from, dest: f.to, deph: (f.dep || '').slice(0, 2), depm: (f.dep || '').slice(3, 5),
       steh: String(Math.floor(f.mins / 60)), stem: String(f.mins % 60)
     });
@@ -97,7 +97,7 @@
     d.setMinutes(Math.round(d.getMinutes() / 5) * 5, 0, 0);
     return Object.assign({}, l, {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      num: 'ACX ' + (100 + Math.floor(Math.random() * 900)),
+      num: 'FWE ' + (100 + Math.floor(Math.random() * 900)),
       dep: pad2(d.getHours()) + ':' + pad2(d.getMinutes())
     });
   }
@@ -755,7 +755,7 @@
       const depMin = 6 * 60 + Math.floor(rnd() * 15) * 60 + [0, 15, 30, 45][Math.floor(rnd() * 4)];
       return Object.assign({}, l, {
         daily: day, id: 'daily-' + day + '-' + i,
-        num: 'ACX ' + (100 + Math.floor(rnd() * 900)),
+        num: 'FWE ' + (100 + Math.floor(rnd() * 900)),
         dep: pad2(Math.floor(depMin / 60) % 24) + ':' + pad2(depMin % 60)
       });
     });
@@ -919,7 +919,7 @@
   function openWelcome() {
     const p = store.get('profile', {});
     $('wName').value = p.name || '';
-    $('wCallsign').value = p.callsign || 'ACX';
+    $('wCallsign').value = p.callsign || 'FWE';
     refreshWelcome();
     $('welcome').classList.remove('hidden');
     stopVoice();
