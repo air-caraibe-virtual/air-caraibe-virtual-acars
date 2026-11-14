@@ -293,9 +293,23 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden) navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {}); });
   }
 
+  // ---------- Actualités de la vraie compagnie ----------
+  async function loadActus() {
+    try {
+      const d = await getJSON(SERVICE + '?action=news');
+      const items = (d && d.ok && d.items) || [];
+      const now = new Date(), d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const when = (t) => !t ? '' : t >= d0 ? 'Aujourd\'hui' : t >= d0 - 86400000 ? 'Hier' : new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+      $('actuList').innerHTML = items.length ? items.slice(0, 8).filter((a) => /^https:\/\//.test(a.link)).map((a) =>
+        '<li><a href="' + esc(a.link) + '" target="_blank" rel="noopener"><b>' + (Date.now() - a.date < 86400000 ? '<span class="actu-new">NOUVEAU</span>' : '') + esc(a.title) + '</b><span>' +
+        esc(a.source || '') + (a.source ? ' · ' : '') + when(a.date) + '</span></a></li>').join('') : '<li class="muted">Pas d\'actualité récente.</li>';
+    } catch (e) { $('actuList').innerHTML = '<li class="muted">Actualités indisponibles pour le moment.</li>'; }
+  }
+
   // ---------- Démarrage ----------
   initMap();
   setReal(store.get('real', true));
+  loadActus();
   loadLive();
   setInterval(loadLive, 20000);
   const start = (location.hash || '').slice(1);

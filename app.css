@@ -112,3 +112,10 @@ h2 { font-family: var(--serif); font-size: 18px; margin: 0 0 6px; }
 .real-ic { background: none; border: none; }
 .real-ic .lbl { position: absolute; left: 28px; top: 5px; white-space: nowrap; background: #1d4ea8; color: #fff; font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 6px; }
 .sheet.real { border-top-color: #1d4ea8; }
+.actu-list { list-style: none; margin: 0; padding: 0; }
+.actu-list li { border-top: 1px solid var(--line); }
+.actu-list li:first-child { border-top: none; }
+.actu-list a { display: block; padding: 10px 0; text-decoration: none; color: var(--ink); min-height: 44px; }
+.actu-list b { display: block; font-size: 15px; line-height: 1.35; }
+.actu-list span { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
+.actu-new { display: inline-block !important; background: #ffd23f; color: var(--ink) !important; font-size: 10px !important; font-weight: 800; padding: 0 6px; border-radius: 99px; margin: 0 4px 0 0 !important; vertical-align: 1px; }
