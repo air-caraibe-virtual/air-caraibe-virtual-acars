@@ -29,6 +29,7 @@
     TBPB: ['Barbade', 13.0746, -59.4925],
     SOCA: ['Cayenne', 4.8198, -52.3604],
     MDPC: ['Punta Cana', 18.5674, -68.3634],
+    MMUN: ['Cancún', 21.0365, -86.8771],
     LFPO: ['Paris-Orly', 48.7233, 2.3794]
   };
   const ROUTES = [
@@ -36,27 +37,30 @@
     ['TFFR','TFFG','iles'],['TFFF','TFFJ','iles'],['TNCM','TFFJ','iles'],['TFFR','TDPD','iles'],
     ['TFFR','TAPA','iles'],['TFFF','TDPD','iles'],
     ['TFFF','TBPB','carib'],['TFFR','SOCA','carib'],['TFFF','SOCA','carib'],['TFFR','MDPC','carib'],['TFFF','MDPC','carib'],
-    ['TFFR','LFPO','transat'],['TFFF','LFPO','transat'],['SOCA','LFPO','transat']
+    ['TFFR','MMUN','carib'],['TFFF','MMUN','carib'],['MDPC','MMUN','carib'],
+    ['TFFR','LFPO','transat','Airbus A350-1000'],['TFFF','LFPO','transat','Airbus A350-1000'],['MDPC','LFPO','transat','Airbus A350-1000'],
+    ['SOCA','LFPO','transat'],['MMUN','LFPO','transat']
   ];
   const CAT_LABELS = { iles: 'Inter-îles', carib: 'Caraïbes', transat: 'Transatlantique' };
-  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359' };
+  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
   function distanceNm(lat1, lon1, lat2, lon2) {
     const r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
     const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLon / 2) ** 2;
     return 2 * 3440.065 * Math.asin(Math.sqrt(h));
   }
-  function planeFor(from, to, cat, nm) {
+  function planeFor(from, to, cat, nm, forced) {
+    if (forced) return { aircraft: forced, speed: 485 };
     if (from === 'TFFJ' || to === 'TFFJ') return { aircraft: 'DHC-6 Twin Otter', speed: 150 };
     if (cat === 'transat') return { aircraft: 'Airbus A350-900', speed: 480 };
     if (nm < 350) return { aircraft: 'ATR 72-600', speed: 270 };
     return { aircraft: 'Airbus A320neo', speed: 450 };
   }
   const LEGS = [];
-  ROUTES.forEach(([x, y, c]) => {
+  ROUTES.forEach(([x, y, c, forced]) => {
     [[x, y], [y, x]].forEach(([from, to]) => {
       const a = AIRPORTS[from], b = AIRPORTS[to];
       const nm = Math.round(distanceNm(a[1], a[2], b[1], b[2]));
-      const p = planeFor(from, to, c, nm);
+      const p = planeFor(from, to, c, nm, forced);
       LEGS.push({ from, to, cat: c, nm, aircraft: p.aircraft, mins: Math.round(nm / p.speed * 60 + 20) });
     });
   });
@@ -76,11 +80,11 @@
       const l = pool[Math.floor(rnd() * pool.length)];
       used.add(l.from + l.to);
       const depMin = 6 * 60 + Math.floor(rnd() * 15) * 60 + [0, 15, 30, 45][Math.floor(rnd() * 4)];
-      return Object.assign({}, l, { num: 'FWE ' + (100 + Math.floor(rnd() * 900)), dep: pad2(Math.floor(depMin / 60) % 24) + ':' + pad2(depMin % 60) });
+      return Object.assign({}, l, { num: 'FWI ' + (100 + Math.floor(rnd() * 900)), dep: pad2(Math.floor(depMin / 60) % 24) + ':' + pad2(depMin % 60) });
     });
   }
   function simbriefUrl(f) {
-    const q = new URLSearchParams({ airline: 'FWE', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
+    const q = new URLSearchParams({ airline: 'FWI', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
       orig: f.from, dest: f.to, deph: f.dep.slice(0, 2), depm: f.dep.slice(3, 5), steh: String(Math.floor(f.mins / 60)), stem: String(f.mins % 60) });
     return 'https://dispatch.simbrief.com/options/custom?' + q.toString();
   }
