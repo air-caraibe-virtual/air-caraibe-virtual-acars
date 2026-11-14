@@ -2,6 +2,11 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.9',
+    date: '15 novembre 2026',
+    fixed: ["Carte live : les options (Suivre mon avion, Radar pluie, Nuages, Vrais vols Air Caraïbes) sont maintenant sur le côté droit de la carte, et plus en dessous."]
+  },
+  {
     version: '0.1.8',
     date: '15 novembre 2026',
     added: ["Carte live : les vrais vols Air Caraïbes en A350, A330 et ATR (indicatif FWI) apparaissent en bleu, avec leur avion, leur immatriculation, leur altitude et leur vitesse. Case « Vrais vols Air Caraïbes » sous la carte pour les afficher ou les cacher.",

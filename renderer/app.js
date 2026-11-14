@@ -1145,7 +1145,7 @@
     ['C\'est quoi le TOD ?', 'Top Of Descent : le point où tu commences ta descente. En général 3 NM par tranche de 1 000 ft à perdre.'],
     ['Comment rejoindre les autres pilotes ?', 'Sur notre serveur Discord : bouton dans l\'onglet « Profil ».'],
     ['D\'où viennent les actualités Air Caraïbes ?', 'Onglet « Actualités Air Caraïbes », à côté de « Carte live » : les derniers articles sur la vraie compagnie, trouvés par Google Actualités.'],
-    ['C\'est quoi les avions bleus sur la carte ?', 'Ce sont les vrais vols Air Caraïbes en ce moment (positions ADS-B). Tu peux les cacher avec la case « Vrais vols Air Caraïbes » sous la carte.'],
+    ['C\'est quoi les avions bleus sur la carte ?', 'Ce sont les vrais vols Air Caraïbes en ce moment (positions ADS-B). Tu peux les cacher avec la case « Vrais vols Air Caraïbes » à droite de la carte.'],
     ['J\'ai une idée pour améliorer l\'ACARS', 'Clique sur le bouton jaune « Une idée ? » en haut : ton idée arrive directement à la compagnie.'],
     ['C\'est quoi le mode bêta-testeur ?', 'Dans « Paramètres », active « Recevoir les versions bêta » pour tester les nouveautés avant leur sortie officielle.']
   ];

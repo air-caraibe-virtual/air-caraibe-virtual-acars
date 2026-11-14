@@ -50,7 +50,16 @@
             <button id="btnSat" class="tog">Satellite</button>
           </div>
         </div>
-        <div id="map" class="map"></div>
+        <div class="map-wrap">
+          <div id="map" class="map"></div>
+          <div class="map-layers" role="group" aria-label="Affichage de la carte">
+            <div class="map-layers-title">Affichage</div>
+            <label class="check"><input type="checkbox" id="followPlane" checked> Suivre mon avion</label>
+            <label class="check"><input type="checkbox" id="wxRadar"> Radar pluie</label>
+            <label class="check"><input type="checkbox" id="wxClouds"> Nuages (satellite)</label>
+            <label class="check real-check"><input type="checkbox" id="realFlights"> Vrais vols Air Caraïbes <span id="realCount" class="real-count"></span></label>
+          </div>
+        </div>
         <div id="profileCard" class="profile-card hidden">
           <div class="profile-head">
             <b>Profil vertical</b>
@@ -59,13 +68,7 @@
           <div id="profileChart"></div>
         </div>
         <div class="map-foot">
-          <div class="map-options">
-            <label class="check"><input type="checkbox" id="followPlane" checked> Suivre mon avion</label>
-            <label class="check"><input type="checkbox" id="wxRadar"> Radar pluie</label>
-            <label class="check"><input type="checkbox" id="wxClouds"> Nuages (satellite)</label>
-            <label class="check real-check"><input type="checkbox" id="realFlights"> Vrais vols Air Caraïbes <span id="realCount" class="real-count"></span></label>
-            <span id="wxLayerTime" class="muted small"></span>
-          </div>
+          <span id="wxLayerTime" class="muted small"></span>
           <button id="btnClearTrail" class="link-btn">Effacer la trace</button>
         </div>
       </div>
