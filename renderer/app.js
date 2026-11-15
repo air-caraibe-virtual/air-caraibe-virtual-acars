@@ -46,12 +46,12 @@
   };
   const ROUTES = [
     ['TFFR','TFFF','iles'],['TFFR','TFFJ','iles'],['TFFR','TNCM','iles'],['TFFR','TFFM','iles'],
-    ['TFFR','TFFG','iles'],['TFFF','TFFJ','iles'],['TNCM','TFFJ','iles'],['TFFR','TDPD','iles'],
+    ['TFFR','TFFG','iles'],['TFFF','TFFJ','iles'],['TFFR','TDPD','iles'],
     ['TFFR','TAPA','iles'],['TFFF','TDPD','iles'],
     ['TFFF','TBPB','carib'],['TFFR','SOCA','carib'],['TFFF','SOCA','carib'],['TFFR','MDPC','carib'],['TFFF','MDPC','carib'],
-    ['TFFR','MMUN','carib'],['TFFF','MMUN','carib'],['MDPC','MMUN','carib'],
-    ['TFFR','LFPO','transat','Airbus A350-1000'],['TFFF','LFPO','transat','Airbus A350-1000'],['MDPC','LFPO','transat','Airbus A350-1000'],
-    ['SOCA','LFPO','transat'],['MMUN','LFPO','transat']
+    ['TFFR','MMUN','carib'],['TFFF','MMUN','carib'],
+    ['TFFR','LFPO','transat','Airbus A350-1000'],['TFFF','LFPO','transat','Airbus A350-1000'],
+    ['SOCA','LFPO','transat']
   ];
   const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
   function simbriefUrl(f) {
