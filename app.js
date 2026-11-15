@@ -42,7 +42,7 @@
     ['SOCA','LFPO','transat']
   ];
   const CAT_LABELS = { iles: 'Inter-îles', carib: 'Caraïbes', transat: 'Transatlantique' };
-  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
+  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A330-300': 'A333', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
   function distanceNm(lat1, lon1, lat2, lon2) {
     const r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
     const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLon / 2) ** 2;
@@ -53,7 +53,7 @@
     if (from === 'TFFJ' || to === 'TFFJ') return { aircraft: 'DHC-6 Twin Otter', speed: 150 };
     if (cat === 'transat') return { aircraft: 'Airbus A350-900', speed: 480 };
     if (nm < 350) return { aircraft: 'ATR 72-600', speed: 270 };
-    return { aircraft: 'Airbus A320neo', speed: 450 };
+    return { aircraft: 'Airbus A330-300', speed: 470 };
   }
   const LEGS = [];
   ROUTES.forEach(([x, y, c, forced]) => {
