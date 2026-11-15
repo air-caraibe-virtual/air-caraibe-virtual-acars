@@ -2,6 +2,11 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.12',
+    date: '15 novembre 2026',
+    removed: ["Les vols vers Saint-Barthélemy (depuis Pointe-à-Pitre et Fort-de-France) et le DHC-6 Twin Otter, qui n'existent pas chez Air Caraïbes."]
+  },
+  {
     version: '0.1.11',
     date: '15 novembre 2026',
     added: ["L'Airbus A330-300 assure maintenant les vols Caraïbes (Cayenne, Punta Cana, Cancún, Barbade)."],

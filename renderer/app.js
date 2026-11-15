@@ -32,7 +32,6 @@
   const AIRPORTS = {
     TFFR: ['Pointe-à-Pitre', 16.2653, -61.5318],
     TFFF: ['Fort-de-France', 14.5910, -61.0032],
-    TFFJ: ['Saint-Barthélemy', 17.9044, -62.8436],
     TNCM: ['Saint-Martin (Juliana)', 18.0410, -63.1089],
     TFFG: ['Saint-Martin (Grand-Case)', 18.0999, -63.0472],
     TFFM: ['Marie-Galante', 15.8687, -61.2700],
@@ -45,15 +44,15 @@
     LFPO: ['Paris-Orly', 48.7233, 2.3794]
   };
   const ROUTES = [
-    ['TFFR','TFFF','iles'],['TFFR','TFFJ','iles'],['TFFR','TNCM','iles'],['TFFR','TFFM','iles'],
-    ['TFFR','TFFG','iles'],['TFFF','TFFJ','iles'],['TFFR','TDPD','iles'],
+    ['TFFR','TFFF','iles'],['TFFR','TNCM','iles'],['TFFR','TFFM','iles'],
+    ['TFFR','TFFG','iles'],['TFFR','TDPD','iles'],
     ['TFFR','TAPA','iles'],['TFFF','TDPD','iles'],
     ['TFFF','TBPB','carib'],['TFFR','SOCA','carib'],['TFFF','SOCA','carib'],['TFFR','MDPC','carib'],['TFFF','MDPC','carib'],
     ['TFFR','MMUN','carib'],['TFFF','MMUN','carib'],
     ['TFFR','LFPO','transat','Airbus A350-1000'],['TFFF','LFPO','transat','Airbus A350-1000'],
     ['SOCA','LFPO','transat']
   ];
-  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A330-300': 'A333', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
+  const SIMBRIEF_TYPES = { 'ATR 72-600': 'AT76', 'Airbus A330-300': 'A333', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
   function simbriefUrl(f) {
     const q = new URLSearchParams({
       airline: 'FWI', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
@@ -74,11 +73,10 @@
   const pad2 = (n) => String(n).padStart(2, '0');
   const fmtDur = (mins) => Math.floor(mins / 60) + ' h ' + pad2(Math.round(mins % 60));
 
-  // Avion attribué à une ligne : Twin Otter pour Saint-Barth (piste courte), ATR pour les courtes
+  // Avion attribué à une ligne : ATR pour les courtes
   // distances, A330-300 pour les Caraïbes, A350-900 et A350-1000 pour la transatlantique.
   function planeFor(from, to, cat, nm, forced) {
     if (forced) return { aircraft: forced, speed: 485 };
-    if (from === 'TFFJ' || to === 'TFFJ') return { aircraft: 'DHC-6 Twin Otter', speed: 150 };
     if (cat === 'transat') return { aircraft: 'Airbus A350-900', speed: 480 };
     if (nm < 350) return { aircraft: 'ATR 72-600', speed: 270 };
     return { aircraft: 'Airbus A330-300', speed: 470 };
@@ -235,7 +233,7 @@
   }
   // ---------- Route et TOD (point de début de descente) ----------
   // Altitude de croisière par défaut quand il n'y a pas de plan SimBrief
-  const DEFAULT_CRUISE = { 'DHC-6 Twin Otter': 8000, 'ATR 72-600': 17000, 'Airbus A330-300': 37000, 'Airbus A350-900': 38000, 'Airbus A350-1000': 37000 };
+  const DEFAULT_CRUISE = { 'ATR 72-600': 17000, 'Airbus A330-300': 37000, 'Airbus A350-900': 38000, 'Airbus A350-1000': 37000 };
   let todMarker = null;
   let todKey = '';
 
@@ -965,7 +963,7 @@
   function welcomeScript(name) {
     const who = name && name.trim() ? name.trim() : 'commandant';
     return 'Moi, c\'est Ti-Pilote, ton assistant de bord. Bienvenue chez Air Caraïbe Virtual, ' + who + ' ! ' +
-      'Depuis Pointe-à-Pitre et Fort-de-France, nos lignes t\'emmènent de Saint-Barth à Cayenne, jusqu\'à Paris-Orly. ' +
+      'Depuis Pointe-à-Pitre et Fort-de-France, nos lignes t\'emmènent de Saint-Martin à Cayenne, jusqu\'à Paris-Orly. ' +
       'Rejoins notre Discord pour retrouver les autres pilotes, réserve ton premier vol, et lance MSFS 2024 : je m\'occupe du reste. ' +
       'Si tu as une question, clique sur moi en bas à droite de l\'écran !';
   }
