@@ -1,5 +1,5 @@
 // Garde l'appli disponible même avec une connexion faible (les données en direct restent en ligne)
-const CACHE = 'acv-mobile-v5';
+const CACHE = 'acv-mobile-v6';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'manifest.webmanifest', 'lib/leaflet.js', 'lib/leaflet.css',
   'img/icon-192.png', 'img/icon-512.png', 'img/apple-touch-icon.png', 'img/photo.jpg'];
 
