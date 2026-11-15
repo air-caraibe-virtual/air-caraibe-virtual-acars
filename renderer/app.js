@@ -53,7 +53,7 @@
     ['TFFR','LFPO','transat','Airbus A350-1000'],['TFFF','LFPO','transat','Airbus A350-1000'],
     ['SOCA','LFPO','transat']
   ];
-  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A320neo': 'A20N', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
+  const SIMBRIEF_TYPES = { 'DHC-6 Twin Otter': 'DHC6', 'ATR 72-600': 'AT76', 'Airbus A330-300': 'A333', 'Airbus A350-900': 'A359', 'Airbus A350-1000': 'A35K' };
   function simbriefUrl(f) {
     const q = new URLSearchParams({
       airline: 'FWI', fltnum: String(f.num).replace(/\D/g, ''), type: SIMBRIEF_TYPES[f.aircraft] || '',
@@ -75,13 +75,13 @@
   const fmtDur = (mins) => Math.floor(mins / 60) + ' h ' + pad2(Math.round(mins % 60));
 
   // Avion attribué à une ligne : Twin Otter pour Saint-Barth (piste courte), ATR pour les courtes
-  // distances, A320neo pour les Caraïbes, A350-900 et A350-1000 pour la transatlantique.
+  // distances, A330-300 pour les Caraïbes, A350-900 et A350-1000 pour la transatlantique.
   function planeFor(from, to, cat, nm, forced) {
     if (forced) return { aircraft: forced, speed: 485 };
     if (from === 'TFFJ' || to === 'TFFJ') return { aircraft: 'DHC-6 Twin Otter', speed: 150 };
     if (cat === 'transat') return { aircraft: 'Airbus A350-900', speed: 480 };
     if (nm < 350) return { aircraft: 'ATR 72-600', speed: 270 };
-    return { aircraft: 'Airbus A320neo', speed: 450 };
+    return { aircraft: 'Airbus A330-300', speed: 470 };
   }
   // Toutes les lignes, dans les deux sens, avec leur avion
   const LEGS = [];
@@ -235,7 +235,7 @@
   }
   // ---------- Route et TOD (point de début de descente) ----------
   // Altitude de croisière par défaut quand il n'y a pas de plan SimBrief
-  const DEFAULT_CRUISE = { 'DHC-6 Twin Otter': 8000, 'ATR 72-600': 17000, 'Airbus A320neo': 36000, 'Airbus A350-900': 38000, 'Airbus A350-1000': 37000 };
+  const DEFAULT_CRUISE = { 'DHC-6 Twin Otter': 8000, 'ATR 72-600': 17000, 'Airbus A330-300': 37000, 'Airbus A350-900': 38000, 'Airbus A350-1000': 37000 };
   let todMarker = null;
   let todKey = '';
 

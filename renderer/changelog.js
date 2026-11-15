@@ -2,6 +2,12 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.11',
+    date: '15 novembre 2026',
+    added: ["L'Airbus A330-300 assure maintenant les vols Caraïbes (Cayenne, Punta Cana, Cancún, Barbade)."],
+    removed: ["L'Airbus A320neo, qui n'existe pas chez Air Caraïbes."]
+  },
+  {
     version: '0.1.10',
     date: '15 novembre 2026',
     removed: ["Vols retirés car ils se font avec une correspondance aux Antilles : Punta Cana ↔ Cancún, Paris-Orly ↔ Cancún, Paris-Orly ↔ Punta Cana et Saint-Martin ↔ Saint-Barthélemy.",
