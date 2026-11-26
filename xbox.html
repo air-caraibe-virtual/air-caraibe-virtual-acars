@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ACV Vols Xbox</title>
+<link rel="icon" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<style>
+:root{--bg:#F4F1EA;--fg:#0E2A3B;--card:#FFFFFF;--muted:#4A5A63;--line:#E7E2D6;--teal:#1A8C8A;--navy:#0E2A3B;--calm:#1D4E89;--calm-bg:#DCE8F7;--alert:#8A4A12;--alert-bg:#FCE8D6;--err:#8A1C12;--err-bg:#F7DEDA}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.45}
+h1,h2{font-family:'Space Grotesk',system-ui,sans-serif;margin:0;line-height:1.15}
+.bg{position:fixed;inset:0;z-index:0;background:url('img/photo-acars.jpg') center 40%/cover;pointer-events:none}
+.veil{position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(rgba(255,255,255,0.88) 0,rgba(255,255,255,0.35) 90px,rgba(255,255,255,0) 200px)}
+.wrap{position:relative;z-index:1;box-sizing:border-box;max-width:960px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.top{background:var(--navy);color:#FFFFFF;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:inherit;font-size:14px;border:0;background:transparent;color:#CFE3E2;padding:8px 14px;border-radius:999px;cursor:pointer;min-height:40px}
+.tabs button[aria-selected="true"]{background:#FFFFFF;color:var(--navy);font-weight:600}
+.card{background:var(--card);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:0 8px 30px rgba(40,10,20,0.16)}
+.muted{color:var(--muted)}.small{font-size:13px}
+.timer{font-family:'Space Grotesk',sans-serif;font-size:44px;font-weight:700;font-variant-numeric:tabular-nums}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:620px){.row{grid-template-columns:minmax(0,1fr)}}
+.btn{font:inherit;font-weight:700;border:0;border-radius:12px;padding:14px;min-height:52px;width:100%;cursor:pointer;background:var(--teal);color:#FFFFFF;text-align:center;display:block;text-decoration:none;box-sizing:border-box}
+.btn.dark{background:var(--navy)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+input,textarea,select{font:inherit;font-size:16px;color:var(--fg);background:#FFFFFF;border:1px solid #8C8476;border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box;min-height:44px;min-width:0}
+textarea{min-height:80px;resize:vertical}
+label{font-size:14px;font-weight:600;display:flex;flex-direction:column;gap:6px}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.hint{background:var(--bg);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.msg{border-radius:10px;padding:10px 12px;font-size:14px}
+.msg.ok{background:#D7EFE8;color:#0B5E55}.msg.err{background:var(--err-bg);color:var(--err)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.badge.calm{background:var(--calm-bg);color:var(--calm)}.badge.alert{background:var(--alert-bg);color:var(--alert)}
+.scroll{overflow-x:auto}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<div class="veil" aria-hidden="true"></div>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700">Air Caraïbe Virtual</div>
+      <div class="small" style="color:#CFE3E2">Vols Xbox · <a href="./" style="color:#CFE3E2">retour à l'appli</a></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Écrans">
+      <button type="button" role="tab" id="t-pilote" aria-selected="true" aria-controls="v-pilote">Pilote</button>
+      <button type="button" role="tab" id="t-plan" aria-selected="false" aria-controls="v-plan">Plan de vol</button>
+      <button type="button" role="tab" id="t-admin" aria-selected="false" aria-controls="v-admin">Admin</button>
+    </div>
+  </header>
+
+  <section id="v-pilote" role="tabpanel" aria-labelledby="t-pilote" class="card">
+    <h2 style="font-size:18px">Statut de vol</h2>
+    <label>Code pilote
+      <input id="code" type="text" autocomplete="off" placeholder="FWI-XXXX-XXXX" autocapitalize="characters">
+    </label>
+    <div class="row">
+      <label>Route
+        <input id="route" type="text" placeholder="TFFR → TFFF">
+      </label>
+      <label>Durée prévue (minutes)
+        <input id="planned" type="number" min="1" inputmode="numeric" placeholder="45">
+      </label>
+    </div>
+    <div class="row">
+      <label>Carburant au départ (kg)
+        <input id="carb-dep" type="number" min="0" inputmode="numeric" placeholder="6500">
+      </label>
+      <label>Carburant à l'arrivée (kg)
+        <input id="carb-arr" type="number" min="0" inputmode="numeric" placeholder="4200">
+      </label>
+    </div>
+    <div class="timer" id="timer" aria-live="off">00:00</div>
+    <div class="small muted" id="etat">Pas de vol en cours.</div>
+    <div class="row">
+      <button type="button" class="btn" id="btn-dep">Départ (décollage)</button>
+      <button type="button" class="btn dark" id="btn-arr" disabled>Arrivée (atterrissage)</button>
+    </div>
+    <div class="hint">
+      <strong>Quand appuyer ?</strong>
+      <span class="small muted"><b>Départ :</b> au décollage, quand les roues quittent la piste.</span>
+      <span class="small muted"><b>Arrivée :</b> à l'atterrissage, quand les roues touchent la piste. N'attendez pas d'être garé.</span>
+    </div>
+    <label>Commentaire de vol (facultatif, 300 caractères max)
+      <textarea id="comment" maxlength="300" placeholder="Ex. : orage à l'arrivée, déroutement sur Fort-de-France"></textarea>
+    </label>
+    <p class="small muted" style="margin:0">Le commentaire est envoyé avec l'arrivée et n'est visible que par l'admin. L'heure de départ et d'arrivée est enregistrée par le serveur.</p>
+    <div id="msg" class="msg" role="status" hidden></div>
+  </section>
+
+  <section id="v-plan" role="tabpanel" aria-labelledby="t-plan" class="card" hidden>
+    <h2 style="font-size:18px">Plan de vol</h2>
+    <p class="small muted" style="margin:0">Ouvrez SimBrief, générez votre plan, puis reportez la durée prévue et le carburant dans l'écran Pilote. Vos identifiants SimBrief restent chez SimBrief.</p>
+    <a class="btn" href="https://www.simbrief.com/" target="_blank" rel="noopener">Ouvrir SimBrief</a>
+  </section>
+
+  <section id="v-admin" role="tabpanel" aria-labelledby="t-admin" class="card" hidden>
+    <h2 style="font-size:18px">Vols déclarés</h2>
+    <div class="row">
+      <label>Clé admin
+        <input id="key" type="password" autocomplete="off">
+      </label>
+      <div style="display:flex;align-items:flex-end"><button type="button" class="btn" id="btn-load">Afficher les vols</button></div>
+    </div>
+    <p class="small muted" style="margin:0">La clé n'est pas enregistrée : elle est redemandée à chaque ouverture. Seuil d'alerte : écart de plus de 15 minutes ou de 20 %.</p>
+    <div id="amsg" class="msg" role="status" hidden></div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th scope="col">Pilote et route</th><th scope="col">Réel</th><th scope="col">Prévu</th><th scope="col">Écart</th><th scope="col">Carburant</th><th scope="col">Commentaire</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  var URL_SERVEUR = 'https://script.google.com/macros/s/AKfycbzBSl9KQbEb4_Ngfm9wkX95jA151VWjXwEAystrrcw7s9fL_RwqLMjEhDcpkC8iJhU/exec';
+  var ERREURS = {
+    code_invalide: 'Code pilote inconnu ou désactivé.',
+    deja_en_vol: 'Un vol est déjà en cours pour ce pilote. Appuyez sur Arrivée.',
+    pas_de_depart: 'Aucun départ trouvé pour ce pilote.',
+    non_autorise: 'Clé admin incorrecte.',
+    json: 'Requête invalide.'
+  };
+  var start = null, timer = null;
+  function $(id){ return document.getElementById(id); }
+  function msg(el, txt, ok){ el.hidden = false; el.className = 'msg ' + (ok ? 'ok' : 'err'); el.textContent = txt; }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function tick(){ if(!start) return; var s = Math.floor((Date.now()-start)/1000); var h = Math.floor(s/3600); $('timer').textContent = (h ? h + ':' : '') + pad(Math.floor((s%3600)/60)) + ':' + pad(s%60); }
+
+  function post(body){
+    return fetch(URL_SERVEUR, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+      .then(function(r){ return r.json(); });
+  }
+
+  try { $('code').value = localStorage.getItem('acv-xbox-code') || ''; } catch(e) {}
+  try { var saved = JSON.parse(localStorage.getItem('acv-xbox-vol') || 'null'); if (saved && saved.start) { start = saved.start; enVol(); } } catch(e) {}
+
+  function enVol(){
+    timer = setInterval(tick, 1000); tick();
+    $('btn-dep').disabled = true; $('btn-arr').disabled = false;
+    $('etat').textContent = 'Vol en cours depuis ' + new Date(start).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) + '.';
+  }
+  function horsVol(){
+    clearInterval(timer); start = null; $('timer').textContent = '00:00';
+    $('btn-dep').disabled = false; $('btn-arr').disabled = true;
+    $('etat').textContent = 'Pas de vol en cours.';
+    try { localStorage.removeItem('acv-xbox-vol'); } catch(e) {}
+  }
+
+  $('btn-dep').addEventListener('click', function(){
+    var code = $('code').value.trim().toUpperCase();
+    if (!code) { msg($('msg'), 'Entrez votre code pilote.', false); return; }
+    $('btn-dep').disabled = true;
+    post({ action: 'depart', code: code, route: $('route').value.trim(), planned: $('planned').value, carb_dep: $('carb-dep').value })
+      .then(function(r){
+        if (!r.ok) { $('btn-dep').disabled = false; msg($('msg'), ERREURS[r.erreur] || 'Erreur : ' + r.erreur, false); return; }
+        try { localStorage.setItem('acv-xbox-code', code); localStorage.setItem('acv-xbox-vol', JSON.stringify({ start: Date.parse(r.depart) })); } catch(e) {}
+        start = Date.parse(r.depart); enVol();
+        msg($('msg'), 'Départ enregistré. Bon vol !', true);
+      })
+      .catch(function(){ $('btn-dep').disabled = false; msg($('msg'), 'Serveur injoignable. Vérifiez votre connexion et réessayez.', false); });
+  });
+
+  $('btn-arr').addEventListener('click', function(){
+    var code = $('code').value.trim().toUpperCase();
+    $('btn-arr').disabled = true;
+    post({ action: 'arrivee', code: code, carb_arr: $('carb-arr').value, commentaire: $('comment').value.trim() })
+      .then(function(r){
+        if (!r.ok) { $('btn-arr').disabled = false; msg($('msg'), ERREURS[r.erreur] || 'Erreur : ' + r.erreur, false); return; }
+        horsVol();
+        $('comment').value = ''; $('carb-dep').value = ''; $('carb-arr').value = '';
+        msg($('msg'), 'Arrivée enregistrée : ' + r.duree_reelle_min + ' minutes de vol.', true);
+      })
+      .catch(function(){ $('btn-arr').disabled = false; msg($('msg'), 'Serveur injoignable. Vérifiez votre connexion et réessayez.', false); });
+  });
+
+  $('btn-load').addEventListener('click', function(){
+    var key = $('key').value;
+    if (!key) { msg($('amsg'), 'Entrez la clé admin.', false); return; }
+    fetch(URL_SERVEUR + '?action=admin&key=' + encodeURIComponent(key))
+      .then(function(r){ return r.json(); })
+      .then(function(r){
+        var tb = $('rows'); tb.textContent = '';
+        if (!r.ok) { msg($('amsg'), ERREURS[r.erreur] || 'Erreur : ' + r.erreur, false); return; }
+        $('amsg').hidden = true;
+        if (!r.vols.length) { msg($('amsg'), 'Aucun vol terminé pour le moment.', true); return; }
+        r.vols.slice().reverse().forEach(function(f){
+          var tr = document.createElement('tr');
+          function td(t){ var c = document.createElement('td'); c.textContent = t; tr.appendChild(c); return c; }
+          td(f.pilote + ' · ' + (f.route || '—'));
+          td(f.duree_reelle_min + ' min');
+          td(f.duree_prevue_min !== '' ? f.duree_prevue_min + ' min' : '—');
+          var c = td('');
+          if (f.duree_prevue_min !== '') {
+            var b = document.createElement('span');
+            b.className = 'badge ' + (f.gros_ecart ? 'alert' : 'calm');
+            b.textContent = (f.ecart_min > 0 ? '+' : '') + f.ecart_min + ' min · ' + (f.gros_ecart ? 'Gros écart' : 'Écart normal');
+            c.appendChild(b);
+          } else { c.textContent = '—'; }
+          td((f.carb_depart_kg || '?') + ' → ' + (f.carb_arrivee_kg || '?') + ' kg');
+          td(f.commentaire || '—');
+          tb.appendChild(tr);
+        });
+      })
+      .catch(function(){ msg($('amsg'), 'Serveur injoignable.', false); });
+  });
+
+  var panels = ['pilote','plan','admin'];
+  panels.forEach(function(k){
+    $('t-' + k).addEventListener('click', function(){
+      panels.forEach(function(p){ $('v-' + p).hidden = p !== k; $('t-' + p).setAttribute('aria-selected', String(p === k)); });
+      if (k !== 'admin') { $('key').value = ''; $('rows').textContent = ''; }
+    });
+  });
+})();
+</script>
+</body>
+</html>

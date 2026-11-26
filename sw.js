@@ -1,7 +1,7 @@
 // Garde l'appli disponible même avec une connexion faible (les données en direct restent en ligne)
-const CACHE = 'acv-mobile-v8';
+const CACHE = 'acv-mobile-v9';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'manifest.webmanifest', 'lib/leaflet.js', 'lib/leaflet.css',
-  'img/icon-192.png', 'img/icon-512.png', 'img/apple-touch-icon.png', 'img/photo.jpg'];
+  'img/icon-192.png', 'img/icon-512.png', 'img/apple-touch-icon.png', 'img/photo.jpg', 'xbox.html', 'img/photo-acars.jpg'];
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
