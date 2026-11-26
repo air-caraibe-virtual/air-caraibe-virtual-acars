@@ -111,7 +111,10 @@ th{font-size:12px;color:var(--muted);font-weight:600}
       </label>
       <div style="display:flex;align-items:flex-end"><button type="button" class="btn" id="btn-load">Afficher les vols</button></div>
     </div>
-    <p class="small muted" style="margin:0">La clé n'est pas enregistrée : elle est redemandée à chaque ouverture. Seuil d'alerte : écart de plus de 15 minutes ou de 20 %.</p>
+    <label style="flex-direction:row;align-items:center;gap:10px;font-weight:500">
+      <input id="remember" type="checkbox" style="width:20px;height:20px;min-height:0;margin:0"> Mémoriser la clé sur cet appareil
+    </label>
+    <p class="small muted" style="margin:0">À cocher seulement sur votre propre téléphone ou ordinateur : la clé y reste enregistrée jusqu'à ce que vous décochiez la case. Seuil d'alerte : écart de plus de 15 minutes ou de 20 %.</p>
     <div id="amsg" class="msg" role="status" hidden></div>
     <div class="scroll">
       <table>
@@ -185,14 +188,23 @@ th{font-size:12px;color:var(--muted);font-weight:600}
       .catch(function(){ $('btn-arr').disabled = false; msg($('msg'), 'Serveur injoignable. Vérifiez votre connexion et réessayez.', false); });
   });
 
+  try { var k0 = localStorage.getItem('acv-xbox-admin'); if (k0) { $('key').value = k0; $('remember').checked = true; } } catch(e) {}
+  $('remember').addEventListener('change', function(){
+    try {
+      if (this.checked && $('key').value) localStorage.setItem('acv-xbox-admin', $('key').value);
+      if (!this.checked) localStorage.removeItem('acv-xbox-admin');
+    } catch(e) {}
+  });
+
   $('btn-load').addEventListener('click', function(){
     var key = $('key').value;
     if (!key) { msg($('amsg'), 'Entrez la clé admin.', false); return; }
+    try { if ($('remember').checked) localStorage.setItem('acv-xbox-admin', key); } catch(e) {}
     fetch(URL_SERVEUR + '?action=admin&key=' + encodeURIComponent(key))
       .then(function(r){ return r.json(); })
       .then(function(r){
         var tb = $('rows'); tb.textContent = '';
-        if (!r.ok) { msg($('amsg'), ERREURS[r.erreur] || 'Erreur : ' + r.erreur, false); return; }
+        if (!r.ok) { if (r.erreur === 'non_autorise') { try { localStorage.removeItem('acv-xbox-admin'); } catch(e) {} $('remember').checked = false; } msg($('amsg'), ERREURS[r.erreur] || 'Erreur : ' + r.erreur, false); return; }
         $('amsg').hidden = true;
         if (!r.vols.length) { msg($('amsg'), 'Aucun vol terminé pour le moment.', true); return; }
         r.vols.slice().reverse().forEach(function(f){
@@ -220,7 +232,7 @@ th{font-size:12px;color:var(--muted);font-weight:600}
   panels.forEach(function(k){
     $('t-' + k).addEventListener('click', function(){
       panels.forEach(function(p){ $('v-' + p).hidden = p !== k; $('t-' + p).setAttribute('aria-selected', String(p === k)); });
-      if (k !== 'admin') { $('key').value = ''; $('rows').textContent = ''; }
+      if (k !== 'admin') { if (!$('remember').checked) $('key').value = ''; $('rows').textContent = ''; }
     });
   });
 })();
