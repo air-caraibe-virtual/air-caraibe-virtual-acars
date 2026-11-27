@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('acv', {
   liveList: () => ipcRenderer.invoke('live:list'),
   realList: () => ipcRenderer.invoke('real:list'),
   newsList: () => ipcRenderer.invoke('news:list'),
+  xboxList: () => ipcRenderer.invoke('xbox:list'),
   metar: (ids) => ipcRenderer.invoke('wx:metar', ids),
   radar: () => ipcRenderer.invoke('wx:radar'),
   updateGetConfig: () => ipcRenderer.invoke('update:getConfig'),

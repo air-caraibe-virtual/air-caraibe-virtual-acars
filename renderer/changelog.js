@@ -2,6 +2,18 @@
    La plus récente en premier. Rubriques : added (ajouté), fixed (corrigé), removed (retiré). */
 window.ACV_CHANGELOG = [
   {
+    version: '0.1.13',
+    date: '27 novembre 2026',
+    added: [
+      "Carte live : les vrais avions Air Caraïbes au sol (pas encore décollés, en orange) et ceux qui viennent d'atterrir (en vert), en plus de ceux en vol. Une liste les regroupe à droite de la carte.",
+      "Carte live : la liste des pilotes Xbox en vol (déclarés sur le téléphone).",
+      "Réservation de vol : « Vol libre », pour choisir soi-même son départ et sa destination parmi les lignes d'Air Caraïbes. L'avion est imposé par la ligne.",
+      "Missions du jour à chaque ouverture de l'ACARS, avec des XP à gagner, et une mission de la semaine.",
+      "Profil : 12 succès à débloquer, avec ton total d'XP et ton niveau."
+    ],
+    fixed: ["Un vol n'est enregistré que s'il est conforme : décollage de l'aéroport de départ, atterrissage à la destination et bon avion. Sinon il est marqué « Non conforme » et ne compte ni au classement, ni pour les missions, ni pour les succès."]
+  },
+  {
     version: '0.1.12',
     date: '15 novembre 2026',
     removed: ["Les vols vers Saint-Barthélemy (depuis Pointe-à-Pitre et Fort-de-France) et le DHC-6 Twin Otter, qui n'existent pas chez Air Caraïbes."]

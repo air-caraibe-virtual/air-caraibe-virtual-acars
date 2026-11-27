@@ -357,3 +357,64 @@ input[readonly] { background: #f4eef0; color: var(--muted); }
 .map-layers { position: absolute; top: 12px; right: 12px; z-index: 500; background: rgba(255,255,255,0.95); border-radius: 14px; padding: 10px 14px 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); display: flex; flex-direction: column; gap: 8px; font-size: 14px; max-width: calc(100% - 70px); }
 .map-layers-title { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
 .map-layers .check { white-space: nowrap; }
+
+/* ---------- Vols réels : au sol / atterris ---------- */
+.real-plane.st-gnd .lbl { background: #c2410c; }
+.real-plane.st-arr .lbl { background: #13602f; }
+.sub-check { padding-left: 26px; font-size: 13px; }
+.sub-check.disabled { opacity: .5; }
+.st-dot { display: inline-block; width: 10px; height: 10px; border-radius: 99px; vertical-align: middle; }
+.st-dot.air { background: #1d4ea8; } .st-dot.gnd { background: #c2410c; } .st-dot.arr { background: #13602f; }
+.real-sec { margin-top: 8px; }
+.real-sec h3 { margin: 0 0 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+.real-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); color: var(--ink); }
+.real-row:first-of-type { border-top: none; }
+.real-row b { font-size: 14px; }
+.st-tag { font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+.st-tag.air { background: #dce8f7; color: #1d3f6e; } .st-tag.gnd { background: #ffe8d6; color: #8a3305; } .st-tag.arr { background: #dff3e6; color: #13602f; }
+
+/* ---------- Vol libre ---------- */
+.free-card { margin-bottom: 20px; }
+.free-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 14px; }
+.free-dest { border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 12px; text-align: left; font: inherit; color: var(--ink); cursor: pointer; display: flex; flex-direction: column; gap: 3px; min-height: 44px; }
+.free-dest:hover { border-color: #e9a7b9; }
+.free-dest.active { border-color: var(--flower); background: var(--soft); }
+.free-dest .code { font-weight: 800; font-size: 16px; }
+.free-dest .city { font-size: 13px; color: var(--muted); }
+.free-dest .ac { font-size: 12px; font-weight: 800; color: var(--flower-dark); }
+.lock-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; background: #f1eef2; color: #4a3a42; padding: 4px 10px; border-radius: 99px; margin-top: 10px; }
+.tag.bad { background: #fde1e1; color: #8a1c12; }
+
+/* ---------- Missions ---------- */
+.missions-box { padding: 0; overflow: hidden; gap: 0; }
+.missions-head { background: var(--flower-dark); color: #fff; padding: 20px 22px; }
+.missions-head h2 { margin: 4px 0 6px; font-size: 26px; font-family: var(--serif); }
+.missions-head .small { opacity: .9; font-size: 14px; }
+.missions-list { padding: 18px 22px 4px; display: flex; flex-direction: column; gap: 10px; }
+.missions-box .actions { padding: 10px 22px 20px; }
+.mis { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 14px; align-items: center; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.mis.week { background: var(--soft); border-color: transparent; }
+.mis.done { background: #eef8f1; border-color: #bfe3cb; }
+.mis-ic { width: 48px; height: 48px; border-radius: 14px; background: var(--soft); color: var(--flower-dark); display: grid; place-items: center; }
+.mis.done .mis-ic { background: #dff3e6; color: var(--green); }
+.mis-bar { height: 7px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.mis-bar > div { height: 100%; background: var(--flower); border-radius: 99px; }
+.mis.done .mis-bar > div { background: var(--green); }
+.xp-tag { font-size: 13px; font-weight: 800; color: #8a3305; background: #ffe8d6; padding: 5px 10px; border-radius: 99px; white-space: nowrap; }
+@media (max-width: 560px) { .mis { grid-template-columns: 48px minmax(0, 1fr); } .xp-tag { grid-column: 2; justify-self: start; } }
+
+/* ---------- Succès ---------- */
+.ach-card { margin-top: 20px; }
+.ach-sum { display: flex; gap: 26px; flex-wrap: wrap; }
+.ach-sum b { display: block; font-family: var(--serif); font-size: 26px; }
+.ach-sum span { font-size: 13px; color: var(--muted); }
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; margin-top: 14px; }
+.ach { background: linear-gradient(135deg, var(--t), #fff 70%); border-radius: 16px; padding: 14px; display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 12px; align-items: center; box-shadow: 0 4px 16px rgba(40,10,20,.08); border-top: 5px solid var(--c); }
+.ach-m { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, var(--c2), var(--c)); color: #fff; border: 3px solid #ffd23f; box-shadow: 0 4px 12px rgba(0,0,0,.18); }
+.ach.off { background: #fff; }
+.ach.off .ach-m { background: var(--t); color: var(--c); border: 3px dashed var(--c); box-shadow: none; }
+.ach-t { font-weight: 800; }
+.ach-d { font-size: 13px; color: var(--muted); }
+.ach-bar { height: 7px; background: var(--t); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.ach-bar > div { height: 100%; background: linear-gradient(90deg, var(--c2), var(--c)); }
+.ach-ok { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 800; color: #fff; background: var(--c); padding: 3px 9px; border-radius: 99px; }

@@ -2,6 +2,8 @@
 const BOARD_URL = 'https://script.google.com/macros/s/AKfycbySqOUDuB985wIO40iVe9pp_RkRE-qa4JETa6u-YqPRLde0sfUMa58jSLSXaP2q08y7XA/exec';
 const BOARD_KEY = 'acv-445b2c6c42266694815ee83f';
 
+const XBOX_URL = 'https://script.google.com/macros/s/AKfycbzBSl9KQbEb4_Ngfm9wkX95jA151VWjXwEAystrrcw7s9fL_RwqLMjEhDcpkC8iJhU/exec';
+
 let accessCode = '';   // code d'accès personnel du pilote (ajouté à chaque envoi)
 
 async function call(method, body, action) {
@@ -35,7 +37,11 @@ module.exports = {
   },
   // Vrais vols Air Caraïbes (positions ADS-B relayées par le service de la compagnie)
   realList: async () => {
-    try { return await call('GET', null, 'real'); } catch (e) { return { ok: false }; }
+    try { return await call('GET', null, 'real&v=2'); } catch (e) { return { ok: false }; }
+  },
+  // Pilotes Xbox en vol (serveur des vols Xbox, déclarés sur le téléphone)
+  xboxList: async () => {
+    try { const res = await fetch(XBOX_URL + '?action=statuts', { redirect: 'follow' }); return await res.json(); } catch (e) { return { ok: false }; }
   },
   newsList: async () => {
     try { return await call('GET', null, 'news'); } catch (e) { return { ok: false }; }

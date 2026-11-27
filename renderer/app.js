@@ -126,6 +126,8 @@
     if (name === 'carte' && map) setTimeout(() => map.invalidateSize(), 50);
     if (name === 'mesvols') renderBookings();
     if (name === 'pireps') renderPireps();
+    if (name === 'profil') renderAchievements();
+    if (name === 'carte') loadXbox();
     if (name === 'classement') renderBoard();
     if (name === 'vols') renderDaily();
     if (name === 'actus' && !actus.length) loadActus();
@@ -431,7 +433,18 @@
     $('liveCount').textContent = n === 0 ? 'Aucun autre pilote en vol pour le moment' : n === 1 ? '1 autre pilote en vol' : n + ' autres pilotes en vol';
   }
   // ---------- Vrais vols Air Caraïbes (positions réelles ADS-B, indicatif FWI) ----------
-  const REAL_SVG = '<svg width="28" height="28" viewBox="-17 -17 34 34" style="display:block;transform-origin:center"><path d="M0 -16 C 2 -16 3 -12 3 -8 L3 -3 L16 4 L16 7 L3 4 L2 11 L6 14 L6 16 L0 15 L-6 16 L-6 14 L-2 11 L-3 4 L-16 7 L-16 4 L-3 -3 L-3 -8 C -3 -12 -2 -16 0 -16 Z" fill="#1d4ea8" stroke="#ffffff" stroke-width="1.6"/></svg>';
+  const REAL_COLORS = { air: '#1d4ea8', gnd: '#c2410c', arr: '#13602f' };
+  const REAL_LABELS = { air: 'En vol', gnd: 'Au sol', arr: 'Atterri' };
+  function realSvg(st) {
+    return '<svg width="28" height="28" viewBox="-17 -17 34 34" style="display:block;transform-origin:center"><path d="M0 -16 C 2 -16 3 -12 3 -8 L3 -3 L16 4 L16 7 L3 4 L2 11 L6 14 L6 16 L0 15 L-6 16 L-6 14 L-2 11 L-3 4 L-16 7 L-16 4 L-3 -3 L-3 -8 C -3 -12 -2 -16 0 -16 Z" fill="' + REAL_COLORS[st] + '" stroke="#ffffff" stroke-width="1.6"/></svg>';
+  }
+  const realPrev = {}, realLandedAt = {};   // pour repérer un avion qui passe de « en vol » à « au sol » pendant la session
+  // En vol, au sol (pas encore décollé) ou atterri depuis moins de 30 minutes
+  function realStatus(f) {
+    if (!f.ground) return 'air';
+    const landed = f.landed || realLandedAt[f.id] || 0;
+    return landed && Date.now() - landed < 30 * 60000 ? 'arr' : 'gnd';
+  }
   const REAL_TYPES = { A359: 'Airbus A350-900', A35K: 'Airbus A350-1000', A332: 'Airbus A330-200', A333: 'Airbus A330-300', AT75: 'ATR 72-500', AT76: 'ATR 72-600' };
   const realMarkers = {};
   let realData = null, realTimer = null;
@@ -446,33 +459,72 @@
   }
   function drawReal() {
     if (!map) return;
-    const on = $('realFlights').checked, list = on && realData ? (realData.flights || []) : [];
+    const on = $('realFlights').checked;
+    const show = { air: true, gnd: $('realGround').checked, arr: $('realLanded').checked };
+    const all = on && realData ? (realData.flights || []).map((f) => Object.assign({}, f, { st: realStatus(f) })) : [];
+    const list = all.filter((f) => show[f.st]);
     const seen = {};
     list.forEach((f) => {
       seen[f.id] = true;
       const age = Math.round((Date.now() - f.t) / 60000);
-      const fl = f.ground ? 'Au sol' : f.alt >= 18000 ? 'FL' + String(Math.round(f.alt / 100)).padStart(3, '0') : f.alt.toLocaleString('fr-FR') + ' ft';
+      const fl = f.st === 'arr' ? 'Atterri' : f.ground ? 'Au sol' : f.alt >= 18000 ? 'FL' + String(Math.round(f.alt / 100)).padStart(3, '0') : f.alt.toLocaleString('fr-FR') + ' ft';
       const tip = '<div class="real-tip"><b>' + esc(f.cs) + ' · Air Caraïbes</b> (vol réel)<br>' + esc(REAL_TYPES[f.type] || f.type || '') +
         (f.reg ? ' · ' + esc(f.reg) : '') + '<br>' + fl + ' · ' + f.gs + ' kt · cap ' + String(f.hdg).padStart(3, '0') + '°<br>' +
         '<span class="src">' + (age <= 1 ? 'Position à l\'instant' : 'Vu il y a ' + age + ' min, position estimée') + ' · données ADS-B adsb.lol</span></div>';
       const pos = realPos(f);
+      const icon = () => L.divIcon({ className: 'real-plane st-' + f.st, html: realSvg(f.st) + '<span class="lbl">' + esc(f.cs) + '</span>', iconSize: [28, 28], iconAnchor: [14, 14] });
       if (!realMarkers[f.id]) {
-        realMarkers[f.id] = L.marker(pos, {
-          icon: L.divIcon({ className: 'real-plane', html: REAL_SVG + '<span class="lbl">' + esc(f.cs) + '</span>', iconSize: [28, 28], iconAnchor: [14, 14] }), zIndexOffset: 600
-        }).addTo(map).bindTooltip(tip, { direction: 'top', offset: [0, -12] });
-      } else realMarkers[f.id].setLatLng(pos).setTooltipContent(tip);
+        realMarkers[f.id] = L.marker(pos, { icon: icon(), zIndexOffset: 600 }).addTo(map).bindTooltip(tip, { direction: 'top', offset: [0, -12] });
+        realMarkers[f.id].st = f.st;
+      } else {
+        realMarkers[f.id].setLatLng(pos).setTooltipContent(tip);
+        if (realMarkers[f.id].st !== f.st) { realMarkers[f.id].setIcon(icon()); realMarkers[f.id].st = f.st; }
+      }
       const el = realMarkers[f.id].getElement();
       if (el) { const svg = el.querySelector('svg'); if (svg) svg.style.transform = 'rotate(' + f.hdg + 'deg)'; el.style.opacity = age > 10 ? '0.65' : '1'; }
     });
     Object.keys(realMarkers).forEach((id) => { if (!seen[id]) { map.removeLayer(realMarkers[id]); delete realMarkers[id]; } });
     $('realCount').textContent = on && realData ? String(list.length) : '';
+    renderRealPanel(on, list);
   }
+  function renderRealPanel(on, list) {
+    $('realCard').classList.toggle('hidden', !on);
+    $('realGround').closest('label').classList.toggle('disabled', !on);
+    $('realLanded').closest('label').classList.toggle('disabled', !on);
+    $('realGround').disabled = !on; $('realLanded').disabled = !on;
+    if (!on) return;
+    if (!realData) { $('realPanel').textContent = 'Chargement…'; return; }
+    if (!list.length) { $('realPanel').textContent = 'Aucun avion Air Caraïbes visible pour le moment.'; return; }
+    const sec = (st, title) => {
+      const rows = list.filter((f) => f.st === st);
+      if (!rows.length) return '';
+      return '<div class="real-sec"><h3>' + title + ' · ' + rows.length + '</h3>' + rows.map((f) => {
+        const extra = st === 'air' ? (f.alt >= 18000 ? 'FL' + String(Math.round(f.alt / 100)).padStart(3, '0') : f.alt.toLocaleString('fr-FR') + ' ft')
+          : st === 'arr' ? 'il y a ' + Math.max(1, Math.round((Date.now() - (f.landed || realLandedAt[f.id])) / 60000)) + ' min' : 'au sol';
+        return '<div class="real-row"><div><b>' + esc(f.cs) + '</b><div class="muted small">' + esc(REAL_TYPES[f.type] || f.type || '') + ' · ' + esc(extra) + '</div></div>' +
+          '<span class="st-tag ' + st + '">' + REAL_LABELS[st] + '</span></div>';
+      }).join('') + '</div>';
+    };
+    $('realPanel').className = '';
+    $('realPanel').innerHTML = sec('air', 'En vol') + sec('gnd', 'Au sol, pas encore décollés') + sec('arr', 'Atterris récemment');
+  }
+  ['realGround', 'realLanded'].forEach((id) => {
+    $(id).checked = store.get(id, true);
+    $(id).addEventListener('change', (e) => { store.set(id, e.target.checked); drawReal(); });
+  });
   function loadReal() {
     if (!$('realFlights').checked || !window.acv || !window.acv.realList) return;
     window.acv.realList().then((r) => {
-      if (r && r.ok) { realData = r; drawReal(); }
+      if (r && r.ok) {
+        (r.flights || []).forEach((f) => {
+          if (f.ground && realPrev[f.id] === false && !realLandedAt[f.id]) realLandedAt[f.id] = Date.now();
+          if (!f.ground) delete realLandedAt[f.id];
+          realPrev[f.id] = !!f.ground;
+        });
+        realData = r; drawReal();
+      }
       else if (!realData) toast('Vrais vols indisponibles pour le moment');
-    }).catch(() => {});
+    }).catch((e) => console.warn('Vrais vols :', e));
   }
   function setReal(on) {
     store.set('realFlights', on);
@@ -506,6 +558,21 @@
   }
   setInterval(liveTick, 20000);
   setTimeout(liveTick, 3000);
+
+  // ---------- Pilotes Xbox en vol (déclarés sur le téléphone, sans position) ----------
+  function loadXbox() {
+    if (!window.acv || !window.acv.xboxList) { $('xboxPanel').textContent = 'Indisponible.'; return; }
+    window.acv.xboxList().then((r) => {
+      if (!r || !r.ok) { $('xboxPanel').textContent = 'Liste indisponible pour le moment.'; return; }
+      const list = r.en_vol || [];
+      if (!list.length) { $('xboxPanel').className = 'muted small'; $('xboxPanel').textContent = 'Aucun pilote Xbox en vol pour le moment.'; return; }
+      $('xboxPanel').className = '';
+      $('xboxPanel').innerHTML = list.map((p) => '<div class="real-row"><div><b>' + esc(p.pilote) + '</b><div class="muted small">' + esc(p.route || 'Route non précisée') + '</div></div>' +
+        '<span class="st-tag air">En vol</span></div>').join('');
+    }).catch(() => { $('xboxPanel').textContent = 'Liste indisponible pour le moment.'; });
+  }
+  setTimeout(loadXbox, 4000);
+  setInterval(() => { if (currentView === 'carte') loadXbox(); }, 60000);
 
   // ---------- Météo réelle (METAR) ----------
   const COVER = { FEW: 'Peu', SCT: 'Épars', BKN: 'Fragmenté', OVC: 'Couvert', VV: 'Ciel invisible' };
@@ -633,14 +700,29 @@
   function getActive() { return store.get('active', null); }
   function setActive(a) { store.set('active', a); renderActive(); drawRoute(a); if (typeof renderWx === 'function') renderWx(); if (typeof renderProfile === 'function') renderProfile(a); }
 
+  // L'avion du simulateur correspond-il à celui imposé par la ligne ? (titre inconnu : on ne bloque pas)
+  function aircraftOk(required, title) {
+    const t = String(title || '').toUpperCase();
+    if (!t) return true;
+    if (required === 'ATR 72-600') return /ATR|AT7/.test(t);
+    if (required === 'Airbus A330-300') return /A33|330/.test(t);
+    if (required === 'Airbus A350-900') return /A35|350/.test(t) && !/1000|35K/.test(t);
+    if (required === 'Airbus A350-1000') return /A35|350/.test(t) && !/-?900\b|A359/.test(t);
+    return true;
+  }
   function track(d) {
     const a = getActive();
     if (!a) return;
     if (a.state === 'prep' && !d.onGround && d.gs > 40) {
       a.state = 'airborne';
       a.takeoffAt = d.t;
+      const dep = AIRPORTS[a.from];
+      const distDep = distanceNm(d.lat, d.lon, dep[1], dep[2]);
+      if (distDep > 15) a.invalid = 'décollage à ' + Math.round(distDep) + ' NM de ' + a.from;
+      else if (!aircraftOk(a.aircraft, d.title)) a.invalid = 'avion différent de l\'' + a.aircraft + ' (' + (d.title || '?') + ')';
       setActive(a);
-      toast('Décollage enregistré pour ' + a.num + ' — bon vol !');
+      if (a.invalid) toast('Vol non conforme : ' + a.invalid + '. Ce vol ne sera pas enregistré.');
+      else toast('Décollage enregistré pour ' + a.num + ' — bon vol !');
     }
     if (a.state === 'airborne') {
       if (!d.onGround) {
@@ -651,22 +733,29 @@
         const arr = AIRPORTS[a.to];
         const distArr = distanceNm(d.lat, d.lon, arr[1], arr[2]);
         const blockMins = Math.max(1, Math.round((d.t - a.takeoffAt) / 60000));
+        const reason = a.invalid || (distArr > 15 ? 'atterrissage à ' + Math.round(distArr) + ' NM de ' + a.to : '');
         const pirep = {
           id: a.id, num: a.num, from: a.from, to: a.to, aircraft: a.aircraft,
           date: new Date().toLocaleDateString('fr-FR'),
+          ts: Date.now(), takeoffAt: a.takeoffAt,
           flightMins: blockMins,
           landingRate: Math.round(lastAirborneVs),
           maxAlt: a.maxAlt || 0,
           plane: d.title || '',
-          status: distArr <= 15 ? 'Accepté' : 'Hors destination'
+          status: reason ? 'Non conforme' : 'Accepté',
+          reason: reason
         };
+        const before = achievementsState().unlocked;
         const list = store.get('pireps', []);
         list.unshift(pirep);
         store.set('pireps', list);
-        submitLanding(pirep);
+        if (!reason) submitLanding(pirep);        // un vol non conforme ne compte pas au classement
         store.set('bookings', store.get('bookings', []).filter((b) => b.id !== a.id));
         setActive(null);
-        toast('Atterrissage ' + pirep.landingRate + ' ft/min — PIREP ' + pirep.num + ' enregistré (' + pirep.status + ')');
+        toast(reason
+          ? 'PIREP ' + pirep.num + ' non conforme (' + reason + ') : il ne compte pas.'
+          : 'Atterrissage ' + pirep.landingRate + ' ft/min — PIREP ' + pirep.num + ' enregistré');
+        if (!reason) celebrate(before);
         renderPireps();
         renderBookings();
       }
@@ -714,6 +803,7 @@
       '<div class="row"><b style="color:#8f1238">' + esc(a.num) + '</b><span class="tag live">' + stateLabel + '</span></div>' +
       '<div style="font-family:var(--serif);font-size:30px;font-weight:700;margin:6px 0">' + esc(a.from) + ' → ' + esc(a.to) + '</div>' +
       '<div class="muted small">' + esc(AIRPORTS[a.from][0]) + ' → ' + esc(AIRPORTS[a.to][0]) + ' · ' + esc(a.aircraft) + '</div>' +
+      (a.invalid ? '<div class="tag bad" style="margin-top:8px">Vol non conforme : ' + esc(a.invalid) + '. Il ne sera pas enregistré.</div>' : '') +
       '<div id="progressBox" class="progress-box"><div class="muted small">L\'avancement s\'affiche dès que MSFS est connecté. Le TOD (début de descente) est marqué sur la carte.</div></div>' +
       ofpHtml(a) +
       '<div class="actions"><button class="btn primary small" id="btnOfp">Importer mon plan SimBrief</button>' +
@@ -852,6 +942,178 @@
   $('airportList').innerHTML = Object.entries(AIRPORTS).map(([code, a]) =>
     '<li><b>' + code + '</b><span class="muted">' + esc(a[0]) + '</span></li>').join('');
 
+  // ---------- Vol libre : le pilote choisit sa ligne, l'avion est imposé ----------
+  const FROMS = Object.keys(AIRPORTS).filter((c) => LEGS.some((l) => l.from === c));
+  let freeFrom = store.get('freeFrom', 'TFFR'), freeTo = null;
+  if (!FROMS.includes(freeFrom)) freeFrom = FROMS[0];
+  $('freeFrom').innerHTML = FROMS.map((c) => '<option value="' + c + '">' + c + ' · ' + esc(AIRPORTS[c][0]) + '</option>').join('');
+  $('freeFrom').value = freeFrom;
+  $('freeFrom').addEventListener('change', (e) => { freeFrom = e.target.value; freeTo = null; store.set('freeFrom', freeFrom); renderFree(); });
+  function renderFree() {
+    const legs = LEGS.filter((l) => l.from === freeFrom);
+    if (!legs.some((l) => l.to === freeTo)) freeTo = legs.length ? legs[0].to : null;
+    $('freeDests').innerHTML = legs.map((l) =>
+      '<button type="button" class="free-dest' + (l.to === freeTo ? ' active' : '') + '" data-to="' + l.to + '" aria-pressed="' + (l.to === freeTo) + '">' +
+      '<span class="code">' + l.to + '</span><span class="city">' + esc(AIRPORTS[l.to][0]) + '</span><span class="ac">' + esc(l.aircraft) + '</span></button>').join('');
+    $('freeDests').querySelectorAll('[data-to]').forEach((b) => b.addEventListener('click', () => { freeTo = b.dataset.to; renderFree(); }));
+    const l = legs.find((x) => x.to === freeTo);
+    if (!l) { $('freeSummary').innerHTML = ''; $('btnFreeBook').disabled = true; return; }
+    $('btnFreeBook').disabled = false;
+    $('freeSummary').innerHTML =
+      '<div class="fb-top"><span style="color:#8f1238">Vol libre</span><span class="muted">' + CAT_LABELS[l.cat] + '</span></div>' +
+      '<div class="fb-route"><div><div class="fb-code">' + l.from + '</div><div class="fb-city">' + esc(AIRPORTS[l.from][0]) + '</div></div>' +
+      '<div class="fb-arrow">→</div>' +
+      '<div style="text-align:right"><div class="fb-code">' + l.to + '</div><div class="fb-city">' + esc(AIRPORTS[l.to][0]) + '</div></div></div>' +
+      '<div class="fb-grid"><div><span>Appareil</span><b>' + esc(l.aircraft) + '</b></div>' +
+      '<div><span>Distance</span><b>' + l.nm + ' NM</b></div>' +
+      '<div><span>Durée estimée</span><b>' + fmtDur(l.mins) + '</b></div>' +
+      '<div><span>Catégorie</span><b>' + CAT_LABELS[l.cat] + '</b></div></div>' +
+      '<div class="lock-tag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Avion imposé par la ligne</div>';
+  }
+  $('btnFreeBook').addEventListener('click', () => {
+    const l = LEGS.find((x) => x.from === freeFrom && x.to === freeTo);
+    if (!l) return;
+    bookFlight(Object.assign(flightFromLeg(l), { free: true }));
+  });
+
+  // ---------- XP, missions du jour et succès ----------
+  function goodPireps() { return store.get('pireps', []).filter((p) => p.status === 'Accepté'); }
+  function legOf(p) { return LEGS.find((l) => l.from === p.from && l.to === p.to) || {}; }
+  function pirepDay(p) { return p.ts ? new Date(p.ts).toLocaleDateString('fr-FR') : p.date; }
+  function weekStart() { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); }
+  const MIS_ICONS = {
+    route: '<path d="M3 17c3-2 5-2 9 0s6 2 9 0"/><path d="M6 13l4-1 3-6 2 1-2 5 4-1 1 2-12 3z"/>',
+    soft: '<path d="M2 20h20"/><path d="M4 16l6-2 8-6 2 1-7 7-9 2z"/>',
+    plane: '<path d="M2 13l8-1 4-7h2l-2 7 6 1 2-2h1l-1 4 1 4h-1l-2-2-6 1 2 7h-2l-4-7-8-1z"/>',
+    week: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'
+  };
+  // Les mêmes missions pour tous les pilotes, renouvelées chaque jour à minuit
+  function todaysMissions() {
+    const rnd = seeded('acv-missions-' + todayKey());
+    const iles = LEGS.filter((l) => l.cat === 'iles');
+    const leg = iles[Math.floor(rnd() * iles.length)];
+    const planes = ['ATR 72-600', 'Airbus A330-300', 'Airbus A350-900', 'Airbus A350-1000'];
+    const pl = planes[Math.floor(rnd() * planes.length)];
+    const today = new Date().toLocaleDateString('fr-FR'), wk = weekStart();
+    const done = goodPireps();
+    const ofToday = done.filter((p) => pirepDay(p) === today);
+    return [
+      { id: 'route-' + todayKey(), kind: 'route', xp: 120, leg: leg, title: 'Navette du jour',
+        text: 'Vole ' + leg.from + ' → ' + leg.to + ' (' + AIRPORTS[leg.from][0] + ' → ' + AIRPORTS[leg.to][0] + ') en ' + leg.aircraft + '.',
+        n: ofToday.some((p) => p.from === leg.from && p.to === leg.to) ? 1 : 0, of: 1 },
+      { id: 'soft-' + todayKey(), kind: 'soft', xp: 80, title: 'Atterrissage en douceur',
+        text: 'Pose-toi à moins de 200 ft/min sur n\'importe quel vol.',
+        n: ofToday.some((p) => Math.abs(p.landingRate) < 200) ? 1 : 0, of: 1 },
+      { id: 'plane-' + todayKey(), kind: 'plane', xp: 100, title: 'Aux commandes de l\'' + pl.replace('Airbus ', ''),
+        text: 'Fais un vol en ' + pl + ' sur une ligne de la compagnie.',
+        n: ofToday.some((p) => p.aircraft === pl) ? 1 : 0, of: 1 },
+      { id: 'week-' + wk, kind: 'week', xp: 400, title: 'Mission de la semaine : la traversée',
+        text: 'Un vol transatlantique en A350 avant dimanche soir.',
+        n: done.some((p) => (p.ts || 0) >= wk && legOf(p).cat === 'transat') ? 1 : 0, of: 1 }
+    ];
+  }
+  // XP : 50 par vol conforme + les missions réussies (gardées une fois gagnées)
+  function missionXp() {
+    const won = store.get('missionsWon', {});
+    todaysMissions().forEach((m) => { if (m.n >= m.of && !won[m.id]) won[m.id] = m.xp; });
+    store.set('missionsWon', won);
+    return Object.values(won).reduce((s, x) => s + x, 0);
+  }
+  function xpTotal() { return goodPireps().length * 50 + missionXp(); }
+  function levelOf(xp) { return xp >= 5000 ? 'Commandant senior' : xp >= 2000 ? 'Commandant de bord' : xp >= 500 ? 'Copilote' : 'Stagiaire'; }
+  function renderMissions() {
+    const p = store.get('profile', {}) || {};
+    $('missionsHello').textContent = 'Bonjour ' + (p.name || pilotIdentity().callsign || 'pilote');
+    const ms = todaysMissions();
+    $('missionsList').innerHTML = ms.map((m) => {
+      const ok = m.n >= m.of;
+      return '<div class="mis' + (m.kind === 'week' ? ' week' : '') + (ok ? ' done' : '') + '">' +
+        '<div class="mis-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' + MIS_ICONS[m.kind] + '</svg></div>' +
+        '<div><b>' + esc(m.title) + '</b><div class="muted small">' + esc(m.text) + '</div>' +
+        '<div class="mis-bar"><div style="width:' + Math.round(m.n / m.of * 100) + '%"></div></div>' +
+        '<div class="muted small" style="margin-top:4px">' + (ok ? 'Réussie' : 'Pas encore faite') + '</div></div>' +
+        '<span class="xp-tag">+' + m.xp + ' XP</span></div>';
+    }).join('');
+    const leg = ms[0].leg;
+    $('missionsBook').textContent = 'Réserver la navette ' + leg.from + ' → ' + leg.to;
+    $('missionsBook').disabled = ms[0].n >= 1;
+  }
+  function openMissions() { renderMissions(); $('missionsPop').classList.remove('hidden'); $('missionsBook').focus(); }
+  function closeMissions() { $('missionsPop').classList.add('hidden'); }
+  $('missionsLater').addEventListener('click', closeMissions);
+  $('missionsBook').addEventListener('click', () => {
+    const leg = todaysMissions()[0].leg;
+    bookFlight(Object.assign(flightFromLeg(leg), { mission: true }));
+    closeMissions(); showView('mesvols');
+  });
+  $('btnMissions').addEventListener('click', openMissions);
+  $('missionsPop').addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMissions(); });
+
+  const ISLANDS = ['TFFR', 'TFFF', 'TNCM', 'TFFG', 'TFFM', 'TDPD', 'TAPA', 'TBPB'];
+  const ACH_ICONS = {
+    hibiscus: '<circle cx="12" cy="12" r="2"/><path d="M12 10c-1-4 2-7 3-6s1 4-1 6M14 12c4-1 7 2 6 3s-4 1-6-1M12 14c1 4-2 7-3 6s-1-4 1-6M10 12c-4 1-7-2-6-3s4-1 6 1"/>',
+    palm: '<path d="M12 21c0-6 1-10 2-12M14 9c-3-3-7-2-9 0M14 9c3-3 7-2 8 1M14 9c0-3-3-6-6-6M14 9c2-3 6-4 8-3"/><path d="M5 21h14"/>',
+    dawn: '<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 7v3M5 11l2 1M19 11l-2 1"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+    prop: '<circle cx="12" cy="12" r="2"/><path d="M12 3v7M12 14v7M4 12h6M14 12h6"/>',
+    jet: '<path d="M2 13l8-1 4-7h2l-2 7 6 1 2-2h1l-1 4 1 4h-1l-2-2-6 1 2 7h-2l-4-7-8-1z"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+    star: '<path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8z"/>',
+    moon: '<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z"/>',
+    wave: '<path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>',
+    compass: '<circle cx="12" cy="12" r="9"/><path d="M15 9l-2 5-4 1 2-5z"/>',
+    crown: '<path d="M3 18h18M5 18l2-9 5 4 5-4 2 9"/>'
+  };
+  const ACH_COLORS = [['#c8174a', '#ff5c8a', '#ffe3ec'], ['#1f7a3a', '#4cc46d', '#e1f6e6'], ['#c2410c', '#ff8a3d', '#ffeadb'], ['#a16207', '#ffd23f', '#fff6d1'],
+    ['#0f766e', '#2dd4bf', '#d9f7f2'], ['#1d4ed8', '#60a5fa', '#e0ecff'], ['#3730a3', '#818cf8', '#e6e7ff'], ['#92400e', '#f5b740', '#fdf0d4'],
+    ['#6b21a8', '#c084fc', '#f1e5ff'], ['#0e7490', '#38bdf8', '#dcf4fd'], ['#be123c', '#fb7185', '#ffe4e6'], ['#8f1238', '#e11d74', '#fde3ef']];
+  function hourOf(ms) { return ms ? new Date(ms).getHours() : -1; }
+  function achievementsState() {
+    const g = goodPireps();
+    const by = (fn) => g.filter(fn).length;
+    const days = {}; g.forEach((p) => { const k = pirepDay(p); days[k] = (days[k] || 0) + 1; });
+    const visited = new Set(); g.forEach((p) => { if (ISLANDS.includes(p.from)) visited.add(p.from); if (ISLANDS.includes(p.to)) visited.add(p.to); });
+    const list = [
+      ['hibiscus', 'Bienvenue à bord', 'Premier vol enregistré', g.length, 1],
+      ['palm', 'Insulaire', '10 vols inter-îles', by((p) => legOf(p).cat === 'iles'), 10],
+      ['dawn', 'Lève-tôt', 'Décollage avant 7 h', by((p) => { const h = hourOf(p.takeoffAt); return h >= 4 && h < 7; }), 1],
+      ['sun', 'Soleil des Antilles', '5 vols dans la même journée', Math.max(0, ...Object.values(days)), 5],
+      ['prop', 'Pro de l\'ATR', '25 vols en ATR 72-600', by((p) => p.aircraft === 'ATR 72-600'), 25],
+      ['jet', 'Caraïbes en A330', '10 vols en A330-300', by((p) => p.aircraft === 'Airbus A330-300'), 10],
+      ['globe', 'Transatlantique', 'Un vol Paris – Antilles en A350', by((p) => legOf(p).cat === 'transat'), 1],
+      ['star', 'Vaisseau amiral', '5 vols en A350-1000', by((p) => p.aircraft === 'Airbus A350-1000'), 5],
+      ['moon', 'Vol de nuit', 'Atterrissage après 22 h', by((p) => { const h = hourOf(p.ts); return h >= 22 || (h >= 0 && h < 4); }), 1],
+      ['wave', 'Toucher plume', '10 atterrissages sous 150 ft/min', by((p) => Math.abs(p.landingRate) < 150), 10],
+      ['compass', 'Tour des Antilles', 'Toutes les îles desservies', visited.size, ISLANDS.length],
+      ['crown', 'Fidèle à la compagnie', '100 vols enregistrés', g.length, 100]
+    ].map(([icon, title, text, n, of], i) => ({ icon, title, text, n: Math.min(n, of), of, ok: n >= of, color: ACH_COLORS[i] }));
+    return { list, unlocked: list.filter((a) => a.ok).map((a) => a.title) };
+  }
+  function renderAchievements() {
+    const s = achievementsState();
+    $('achCount').textContent = s.unlocked.length + ' / ' + s.list.length;
+    const xp = xpTotal();
+    $('xpTotal').textContent = xp.toLocaleString('fr-FR') + ' XP';
+    $('xpLevel').textContent = 'niveau ' + levelOf(xp);
+    $('achGrid').innerHTML = s.list.map((a) =>
+      '<div class="ach' + (a.ok ? '' : ' off') + '" style="--c:' + a.color[0] + ';--c2:' + a.color[1] + ';--t:' + a.color[2] + '">' +
+      '<div class="ach-m"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">' + ACH_ICONS[a.icon] + '</svg></div>' +
+      '<div><div class="ach-t">' + esc(a.title) + '</div><div class="ach-d">' + esc(a.text) + (a.ok || a.of === 1 ? '' : ' · ' + a.n + ' / ' + a.of) + '</div>' +
+      (a.ok ? '<span class="ach-ok">Débloqué</span>' : '<div class="ach-bar"><div style="width:' + Math.round(a.n / a.of * 100) + '%"></div></div>') +
+      '</div></div>').join('');
+  }
+  // Après un vol conforme : annonce les nouveaux succès et les missions réussies
+  function celebrate(before) {
+    const now = achievementsState().unlocked.filter((t) => !before.includes(t));
+    const ms = todaysMissions().filter((m) => m.n >= m.of && !(store.get('missionsWon', {}))[m.id]);
+    xpTotal();
+    renderAchievements();
+    const parts = [];
+    if (now.length) parts.push('Succès débloqué : ' + now.join(', '));
+    if (ms.length) parts.push('Mission réussie : ' + ms.map((m) => m.title + ' (+' + m.xp + ' XP)').join(', '));
+    if (parts.length) setTimeout(() => toast(parts.join(' · ')), 4500);
+  }
+
   // ---------- Mes vols ----------
   function renderBookings() {
     const list = store.get('bookings', []);
@@ -905,7 +1167,8 @@
         '<tr><td>' + esc(p.date) + '</td><td><b style="color:#8f1238">' + esc(p.num) + '</b></td><td>' + esc(p.from) + ' → ' + esc(p.to) + '</td>' +
         '<td>' + esc(p.aircraft) + '</td><td>' + fmtDur(p.flightMins) + '</td><td>' + Number(p.maxAlt).toLocaleString('fr-FR') + ' ft</td>' +
         '<td>' + p.landingRate + ' ft/min</td>' +
-        '<td><span class="tag ' + (p.status === 'Accepté' ? 'ok' : 'warn') + '">' + esc(p.status) + '</span></td></tr>'
+        '<td><span class="tag ' + (p.status === 'Accepté' ? 'ok' : p.status === 'Non conforme' ? 'bad' : 'warn') + '"' + (p.reason ? ' title="' + esc(p.reason) + '"' : '') + '>' + esc(p.status) + '</span>' +
+        (p.reason ? '<div class="muted small">' + esc(p.reason) + '</div>' : '') + '</td></tr>'
       ).join('') + '</tbody></table></div>';
   }
 
@@ -1328,4 +1591,12 @@
   drawRoute(getActive());
   loadProfile();
   authCheck();
+  renderFree();
+  renderAchievements();
+  // Missions du jour : une fois à chaque ouverture, dès qu'aucune autre fenêtre n'est affichée (connexion, accueil, nouveautés…)
+  (function missionsAtLaunch(tries) {
+    const busy = ['lock', 'welcome', 'news', 'updPop', 'ideaPop'].some((id) => $(id) && !$(id).classList.contains('hidden'));
+    if (!busy && store.get('profile', null)) { openMissions(); return; }
+    if (tries < 40) setTimeout(() => missionsAtLaunch(tries + 1), 3000);
+  })(0);
 })();

@@ -58,6 +58,8 @@
             <label class="check"><input type="checkbox" id="wxRadar"> Radar pluie</label>
             <label class="check"><input type="checkbox" id="wxClouds"> Nuages (satellite)</label>
             <label class="check real-check"><input type="checkbox" id="realFlights"> Vrais vols Air Caraïbes <span id="realCount" class="real-count"></span></label>
+            <label class="check sub-check"><input type="checkbox" id="realGround" checked> <span class="st-dot gnd" aria-hidden="true"></span> Au sol</label>
+            <label class="check sub-check"><input type="checkbox" id="realLanded" checked> <span class="st-dot arr" aria-hidden="true"></span> Atterris</label>
           </div>
         </div>
         <div id="profileCard" class="profile-card hidden">
@@ -87,6 +89,16 @@
         <div class="card">
           <h2>Vol en cours</h2>
           <div id="activeFlight" class="muted">Aucun vol démarré. Réserve un vol dans « Réservation de vol », puis démarre-le dans « Mes vols ».</div>
+        </div>
+        <div id="realCard" class="card hidden">
+          <h2>Vols Air Caraïbes réels</h2>
+          <div id="realPanel" class="muted small">Chargement…</div>
+          <p class="muted small" style="margin:8px 0 0">Données ADS-B (adsb.lol) : un avion au sol n'apparaît que si son transpondeur est allumé.</p>
+        </div>
+        <div class="card">
+          <h2>Pilotes Xbox en vol</h2>
+          <div id="xboxPanel" class="muted small">Chargement…</div>
+          <p class="muted small" style="margin:8px 0 0">Déclarés par les pilotes Xbox sur leur téléphone, sans position sur la carte.</p>
         </div>
               <div class="card">
           <div class="card-head" style="margin-bottom:6px">
@@ -129,6 +141,23 @@
         <span id="dailyCount" class="tag info"></span>
       </div>
       <div id="dailyFlights" class="daily-grid"></div>
+    </div>
+    <div class="card free-card">
+      <div class="card-head">
+        <div>
+          <h1>Vol libre</h1>
+          <p class="muted small" style="margin:4px 0 0">Choisis ton départ et ta destination parmi les lignes opérées par Air Caraïbes. L'avion est imposé par la ligne.</p>
+        </div>
+      </div>
+      <label class="field inline-field" for="freeFrom">Aéroport de départ
+        <select id="freeFrom"></select>
+      </label>
+      <div id="freeDests" class="free-grid" role="group" aria-label="Destinations"></div>
+      <div id="freeSummary" class="flight-box" style="margin-top:14px"></div>
+      <div class="actions">
+        <button id="btnFreeBook" class="btn primary">Réserver ce vol</button>
+      </div>
+      <p class="muted small" style="margin:8px 0 0">L'ACARS n'enregistre le vol que si tu décolles de l'aéroport de départ, que tu te poses à la destination et que tu voles sur l'avion indiqué. Sinon le vol est marqué « Non conforme » et ne compte pas.</p>
     </div>
     <div class="layout">
       <div class="card wide">
@@ -210,6 +239,7 @@
           <button id="btnSaveProfile" class="btn primary">Enregistrer</button>
           <button id="btnReplayWelcome" class="btn outline">Revoir l'accueil</button>
           <button id="btnLogout" class="btn outline">Se déconnecter</button>
+          <button id="btnMissions" class="btn outline">Missions du jour</button>
         </div>
         <p class="muted small">Ton indicatif est donné par la compagnie avec ton code d'accès.</p>
       </div>
@@ -224,6 +254,19 @@
           <p class="muted small">Version bêta : la liaison avec MSFS 2024 est expérimentale. Les vols, réservations et PIREPs sont gardés sur cet ordinateur.</p>
         </div>
       </aside>
+    </div>
+    <div class="card ach-card">
+      <div class="card-head">
+        <div>
+          <h1>Succès</h1>
+          <p class="muted small" style="margin:4px 0 0">Débloqués en volant avec l'ACARS, sur les lignes et les avions de la compagnie. Seuls les vols conformes comptent.</p>
+        </div>
+        <div class="ach-sum">
+          <div><b id="achCount">0 / 12</b><span>succès débloqués</span></div>
+          <div><b id="xpTotal">0 XP</b><span id="xpLevel">Stagiaire</span></div>
+        </div>
+      </div>
+      <div id="achGrid" class="ach-grid"></div>
     </div>
   </section>
   <!-- PARAMÈTRES -->
@@ -395,6 +438,20 @@
     <div class="actions" style="justify-content:flex-end;margin-top:0">
       <button id="ideaCancel" class="btn outline">Annuler</button>
       <button id="ideaSend" class="btn primary">Envoyer mon idée</button>
+    </div>
+  </div>
+</div>
+<div id="missionsPop" class="news-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="missionsTitle">
+  <div class="news-box missions-box">
+    <div class="missions-head">
+      <div id="missionsHello" class="small">Bonjour</div>
+      <h2 id="missionsTitle">Tes missions du jour</h2>
+      <div class="small">Nouvelles missions chaque jour à minuit. Seuls les vols conformes comptent.</div>
+    </div>
+    <div id="missionsList" class="missions-list"></div>
+    <div class="actions" style="justify-content:flex-end">
+      <button id="missionsLater" class="btn outline">Plus tard</button>
+      <button id="missionsBook" class="btn primary">Réserver la navette du jour</button>
     </div>
   </div>
 </div>
