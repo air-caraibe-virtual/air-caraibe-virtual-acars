@@ -4,6 +4,32 @@ const BOARD_KEY = 'acv-445b2c6c42266694815ee83f';
 
 const XBOX_URL = 'https://script.google.com/macros/s/AKfycbzBSl9KQbEb4_Ngfm9wkX95jA151VWjXwEAystrrcw7s9fL_RwqLMjEhDcpkC8iJhU/exec';
 
+const REAL_TYPES = 'A359,A35K,A332,A333,AT75,AT76';
+const realMemo = {};   // dernières positions connues (avions au-dessus de l'océan, sans couverture)
+async function realDirect() {
+  const res = await fetch('https://api.adsb.lol/v2/type/' + REAL_TYPES, { headers: { 'User-Agent': 'AirCaraibeVirtual-ACARS' }, signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const d = await res.json(), now = Date.now(), at = d.now || now;
+  (d.ac || []).forEach((a) => {
+    const cs = String(a.flight || '').trim();
+    if (cs.indexOf('FWI') !== 0 || a.lat == null || a.lon == null) return;
+    const ground = a.alt_baro === 'ground';
+    const prev = realMemo[a.hex];
+    const landed = ground ? ((prev && prev.landed) || (prev && !prev.ground ? at : 0)) : 0;   // vient d'atterrir ?
+    realMemo[a.hex] = {
+      cs: cs.slice(0, 10), reg: String(a.r || '').slice(0, 10), type: String(a.t || '').slice(0, 6), lat: a.lat, lon: a.lon,
+      alt: ground ? 0 : Math.round(Number(a.alt_baro) || Number(a.alt_geom) || 0), gs: Math.round(a.gs || 0),
+      hdg: Math.round(a.track || a.true_heading || 0), vs: Math.round(a.baro_rate || 0), ground, landed,
+      t: at - (Number(a.seen_pos) || 0) * 1000
+    };
+  });
+  Object.keys(realMemo).forEach((k) => {
+    const f = realMemo[k];
+    if (now - f.t > 30 * 60000 || (f.ground && !f.landed && now - f.t > 10 * 60000) || (f.landed && now - f.landed > 30 * 60000 && now - f.t > 10 * 60000)) delete realMemo[k];
+  });
+  return { ok: true, live: true, at: now, refresh: 180, source: 'adsb.lol', flights: Object.keys(realMemo).map((k) => Object.assign({ id: k }, realMemo[k])) };
+}
+
 let accessCode = '';   // code d'accès personnel du pilote (ajouté à chaque envoi)
 
 async function call(method, body, action) {
@@ -36,8 +62,12 @@ module.exports = {
     try { return await call('POST', Object.assign({ action: 'idea' }, idea)); } catch (e) { return { ok: false, message: 'Envoi impossible (connexion ?)' }; }
   },
   // Vrais vols Air Caraïbes (positions ADS-B relayées par le service de la compagnie)
+  // Vrais vols Air Caraïbes : demandés directement à adsb.lol depuis le PC du pilote
+  // (le serveur Google est souvent refusé par adsb.lol, « trop de demandes »), sinon par le serveur
   realList: async () => {
-    try { return await call('GET', null, 'real&v=2'); } catch (e) { return { ok: false }; }
+    try { return await realDirect(); } catch (e) {
+      try { return await call('GET', null, 'real&v=2'); } catch (e2) { return { ok: false }; }
+    }
   },
   // Pilotes Xbox en vol (serveur des vols Xbox, déclarés sur le téléphone)
   xboxList: async () => {

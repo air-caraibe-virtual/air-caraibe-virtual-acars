@@ -147,7 +147,8 @@
       $('map').innerHTML = '<div class="empty" style="padding:20px">La carte n\'a pas pu se charger.</div>';
       return;
     }
-    map = L.map('map', { zoomControl: true, attributionControl: true }).setView([16.4, -61.6], 7);
+    // Une seule Terre (pas de copies à gauche et à droite), comme sur une vraie carte de vol
+    map = L.map('map', { zoomControl: true, attributionControl: true, minZoom: 2, maxBounds: [[-85, -180], [85, 180]], maxBoundsViscosity: 1, worldCopyJump: false }).setView([16.4, -61.6], 7);
     // Fonds de carte Esri : gratuits et sans clé (le plan CARTO exige désormais une clé)
     planLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 18,
@@ -165,6 +166,10 @@
         .bindTooltip(code + ' · ' + a[0], { direction: 'top', className: 'apt-label', offset: [0, -6] });
     });
     trail = L.polyline([], { color: '#d6204f', weight: 3, opacity: 0.85 }).addTo(map);
+    map.createPane('clouds');
+    map.getPane('clouds').style.zIndex = 350;
+    map.getPane('clouds').style.mixBlendMode = 'screen';   // seuls les nuages (clairs) ressortent, le sol sombre de l'image disparaît
+    map.getPane('clouds').style.pointerEvents = 'none';
   }
   function setMapMode(sat) {
     if (!map) return;
@@ -176,14 +181,31 @@
   }
   $('btnPlan').addEventListener('click', () => setMapMode(false));
   $('btnSat').addEventListener('click', () => setMapMode(true));
-  $('btnClearTrail').addEventListener('click', () => { if (trail) trail.setLatLngs([]); });
+  // Trace de mon avion, en morceaux : un saut impossible (chargement d'un autre aéroport, nouveau vol,
+  // position 0/0 pendant un chargement) commence un nouveau morceau au lieu de tirer un trait à travers la carte
+  let trailSegs = [[]], trailLast = null;
+  function clearTrail() { trailSegs = [[]]; trailLast = null; if (trail) trail.setLatLngs([]); }
+  function addTrailPoint(ll, t) {
+    if (Math.abs(ll[0]) < 0.5 && Math.abs(ll[1]) < 0.5) return;
+    if (trailLast) {
+      const jump = distanceNm(trailLast.ll[0], trailLast.ll[1], ll[0], ll[1]);
+      const hours = Math.max(0, (t - trailLast.t) / 3600000);
+      if (jump > Math.max(15, hours * 750)) trailSegs.push([]);
+    }
+    trailSegs[trailSegs.length - 1].push(ll);
+    trailLast = { ll, t };
+    let total = trailSegs.reduce((n, sg) => n + sg.length, 0);
+    while (total > 4000 && trailSegs.length) { const cut = Math.min(trailSegs[0].length, total - 3000); trailSegs[0].splice(0, cut); total -= cut; if (!trailSegs[0].length && trailSegs.length > 1) trailSegs.shift(); }
+    trail.setLatLngs(trailSegs.filter((sg) => sg.length > 1));
+  }
+  $('btnClearTrail').addEventListener('click', clearTrail);
 
   // ---------- Météo sur la carte : radar de pluie et nuages par satellite ----------
   let radarLayer = null, cloudLayer = null, radarTime = 0;
   function wxLayerLabel() {
     const parts = [];
     if ($('wxRadar').checked && radarTime) { const d = new Date(radarTime * 1000); parts.push('<span class="radar-legend">Radar ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ' <i title="faible à très forte"></i></span>'); }
-    if ($('wxClouds').checked) parts.push('Nuages : image satellite GOES (toutes les 10 min)');
+    if ($('wxClouds').checked) parts.push('Nuages : satellites météo du monde entier (EUMETSAT)');
     $('wxLayerTime').innerHTML = parts.join(' · ');
   }
   function loadRadar() {
@@ -199,8 +221,10 @@
   function setClouds(on) {
     if (!map) return;
     if (on && !cloudLayer) {
-      cloudLayer = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_Band13_Clean_Infrared/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png', {
-        opacity: 0.45, maxNativeZoom: 6, maxZoom: 18, zIndex: 350, attribution: 'Nuages &copy; NASA GIBS, NOAA GOES'
+      // Image infrarouge de l'anneau des satellites géostationnaires : toute la Terre, pas seulement les Amériques
+      cloudLayer = L.tileLayer.wms('https://view.eumetsat.int/geoserver/wms', {
+        layers: 'mumi:worldcloudmap_ir108', format: 'image/png', transparent: true, version: '1.3.0',
+        pane: 'clouds', opacity: 0.8, maxZoom: 18, attribution: 'Nuages &copy; EUMETSAT'
       }).addTo(map);
     } else if (!on && cloudLayer) { map.removeLayer(cloudLayer); cloudLayer = null; }
   }
@@ -210,7 +234,7 @@
     wxLayerLabel();
   });
   $('wxClouds').addEventListener('change', (e) => { store.set('wxClouds', e.target.checked); setClouds(e.target.checked); wxLayerLabel(); });
-  setInterval(() => { loadRadar(); if (cloudLayer) cloudLayer.redraw(); }, 10 * 60 * 1000);
+  setInterval(() => { loadRadar(); if (cloudLayer) cloudLayer.setParams({ t: Math.floor(Date.now() / 600000) }); }, 10 * 60 * 1000);
 
   const PLANE_SVG = '<svg width="34" height="34" viewBox="-17 -17 34 34" style="display:block;transform-origin:center"><path d="M0 -16 C 2 -16 3 -12 3 -8 L3 -3 L16 4 L16 7 L3 4 L2 11 L6 14 L6 16 L0 15 L-6 16 L-6 14 L-2 11 L-3 4 L-16 7 L-16 4 L-3 -3 L-3 -8 C -3 -12 -2 -16 0 -16 Z" fill="#d6204f" stroke="#ffffff" stroke-width="1.6"/></svg>';
   function updatePlane(d) {
@@ -227,9 +251,7 @@
     const el = planeMarker.getElement();
     if (el) { const svg = el.querySelector('svg'); if (svg) svg.style.transform = 'rotate(' + d.hdg + 'deg)'; }
     if (!d.onGround || d.gs > 3) {
-      trail.addLatLng(ll);
-      const pts = trail.getLatLngs();
-      if (pts.length > 4000) trail.setLatLngs(pts.slice(-3000));
+      addTrailPoint(ll, d.t || Date.now());
     }
     if ($('followPlane').checked) map.panTo(ll, { animate: true });
   }
@@ -1139,6 +1161,7 @@
       const f = store.get('bookings', []).find((x) => x.id === b.dataset.start);
       if (!f) return;
       setActive(Object.assign({}, f, { state: 'prep', startedAt: Date.now() }));
+      clearTrail();   // nouvelle trace pour ce vol
       renderBookings();
       showView('carte');
       toast('Suivi de ' + f.num + ' démarré : décolle de ' + f.from + ' dans MSFS 2024');

@@ -11,7 +11,12 @@ window.ACV_CHANGELOG = [
       "Missions du jour à chaque ouverture de l'ACARS, avec des XP à gagner, et une mission de la semaine.",
       "Profil : 12 succès à débloquer, avec ton total d'XP et ton niveau."
     ],
-    fixed: ["Un vol n'est enregistré que s'il est conforme : décollage de l'aéroport de départ, atterrissage à la destination et bon avion. Sinon il est marqué « Non conforme » et ne compte ni au classement, ni pour les missions, ni pour les succès."]
+    fixed: [
+      "Un vol n'est enregistré que s'il est conforme : décollage de l'aéroport de départ, atterrissage à la destination et bon avion. Sinon il est marqué « Non conforme » et ne compte ni au classement, ni pour les missions, ni pour les succès.",
+      "Carte live : les nuages par satellite couvrent maintenant toute la Terre, et non plus seulement les Amériques. La carte n'affiche plus plusieurs copies du monde côte à côte.",
+      "Carte live : les vrais vols Air Caraïbes s'affichent de nouveau. Ils sont demandés directement depuis ton PC, car le service refusait les demandes du serveur.",
+      "Carte live : la trace de ton avion ne tire plus de traits à travers la carte quand tu changes d'aéroport ou de vol. Elle repart de zéro à chaque vol démarré."
+    ]
   },
   {
     version: '0.1.12',
